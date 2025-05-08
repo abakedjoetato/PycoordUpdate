@@ -400,7 +400,7 @@ class Setup(commands.Cog):
             
             # Import standardization function
             from utils.server_utils import standardize_server_id
-            std_server_id = standardize_server_id(server_id)
+            std_server_id = standardize_server_id(str(server_id) if server_id is not None else "")
             logger.info(f"Standardized server_id for removal: '{std_server_id}'")
 
             # Get guild model with proper error handling
@@ -414,7 +414,7 @@ class Setup(commands.Cog):
                 for i, s in enumerate(guild_model.servers):
                     s_id = s.get("server_id")
                     s_name = s.get("server_name", "Unknown")
-                    std_id = standardize_server_id(s_id)
+                    std_id = standardize_server_id(str(s_id) if s_id is not None else "")
                     logger.info(f"  - Server {i}: ID={s_id}, StdID={std_id}, Name={s_name}, Type={type(s_id)}")
                     
             except Exception as e:
@@ -432,7 +432,7 @@ class Setup(commands.Cog):
             server_in_guild = None
             for s in guild_model.servers:
                 s_id = s.get("server_id")
-                std_id = standardize_server_id(s_id)
+                std_id = standardize_server_id(str(s_id) if s_id is not None else "")
                 
                 # Try multiple matching approaches
                 if (s_id == server_id or  # Direct match
@@ -491,7 +491,7 @@ class Setup(commands.Cog):
                         
                         # Import server utils here for consistent ID handling
                         from utils.server_utils import standardize_server_id
-                        std_server_id = standardize_server_id(server_id_val)
+                        std_server_id = standardize_server_id(str(server_id_val) if server_id_val is not None else "")
                         
                         # First update the guild model directly (this is safer than deletion)
                         logger.info(f"Removing server from guild first. Raw ID: {server_id_val}, Type: {type(server_id_val)}")
