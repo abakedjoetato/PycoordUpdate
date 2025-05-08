@@ -198,9 +198,9 @@ def validate_server_id_format(server_id: Union[str, int, None]) -> bool:
     if server_id is None:
         return False
         
-    # Convert to string
+    # Convert to string - safe_standardize_server_id never returns None
     str_id = safe_standardize_server_id(server_id)
-    if str_id is None:
+    if not str_id:
         return False
         
     # Check for common patterns (adjust based on your specific requirements)
