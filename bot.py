@@ -262,16 +262,16 @@ async def initialize_bot(force_sync=False):
             if f.endswith('.py') and not f.startswith('_'):
                 cog_files.append(f)
         
-        # Now load each cog with proper awaiting
+        # Now load each cog (load_extension is not awaitable in py-cord)
         for filename in cog_files:
             cog_name = filename[:-3]
             try:
-                # Proper py-cord extension loading
-                await bot.load_extension(f"{cog_dir}.{cog_name}")
+                # Load extension is synchronous in py-cord
+                bot.load_extension(f"{cog_dir}.{cog_name}")
                 logger.info(f"Loaded cog: {cog_name}")
                 cog_count += 1
             except Exception as e:
-                logger.error(f"Failed to load cog {cog_name}: {e}")
+                logger.error(f"Failed to load cog {cog_name}: {e}", exc_info=True)
     except Exception as e:
         logger.error(f"Error listing cog directory: {e}")
     
