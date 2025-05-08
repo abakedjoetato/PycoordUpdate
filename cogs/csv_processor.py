@@ -144,7 +144,7 @@ class CSVProcessorCog(commands.Cog):
             count = 0
             async for server in servers_cursor:
                 raw_server_id = server.get("server_id")
-                server_id = standardize_server_id(raw_server_id)
+                server_id = standardize_server_id(str(raw_server_id) if raw_server_id is not None else "")
 
                 if not server_id:
                     logger.warning(f"Invalid server ID format in servers collection: {raw_server_id}, skipping")
@@ -170,7 +170,7 @@ class CSVProcessorCog(commands.Cog):
             game_count = 0
             async for server in game_servers_cursor:
                 raw_server_id = server.get("server_id")
-                server_id = standardize_server_id(raw_server_id)
+                server_id = standardize_server_id(str(raw_server_id) if raw_server_id is not None else "")
 
                 if not server_id:
                     logger.warning(f"Invalid server ID format in game_servers collection: {raw_server_id}, skipping")
@@ -1139,8 +1139,8 @@ class CSVProcessorCog(commands.Cog):
                 guild_id = str(interaction.guild_id)
                 guild_doc = await self.bot.db.guilds.find_one({"guild_id": guild_id})
                 if guild_doc and "default_server_id" in guild_doc:
-                    raw_server_id = guild_doc["default_server_id"]
-                    server_id = standardize_server_id(raw_server_id)
+                    raw_server_id = guild_doc.get("default_server_id", "")
+                    server_id = standardize_server_id(str(raw_server_id))
                     logger.info(f"Using default server ID from guild config: {raw_server_id} (standardized to {server_id})")
                 else:
                     embed = EmbedBuilder.error(
