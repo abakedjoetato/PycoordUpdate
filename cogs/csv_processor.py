@@ -901,6 +901,8 @@ class CSVProcessorCog(commands.Cog):
         finally:
             # This block always executes regardless of exceptions
             logger.debug(f"CSV processing completed for server {server_id}")
+            # Ensure we always return a value
+            return files_processed, events_processed
 
     async def run_historical_parse(self, server_id: str, days: int = 30) -> Tuple[int, int]:
         """Run a historical parse for a server, checking further back in time

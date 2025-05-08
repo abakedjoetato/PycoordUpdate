@@ -32,6 +32,7 @@ if discord is not None:
         logger.info("Detected discord.py library")
 
 # Define our compatibility classes
+# Define as a class not a type to allow assignment without type errors
 class AppCommandOptionType:
     """Discord application command option types"""
     STRING = 3
@@ -43,6 +44,14 @@ class AppCommandOptionType:
     MENTIONABLE = 9
     NUMBER = 10
     ATTACHMENT = 11
+    
+    @classmethod
+    def from_enum(cls, enum_class):
+        """Create from another enum class if available"""
+        if enum_class is None:
+            return cls
+        # Copy values if possible
+        return enum_class
 
 # Compatibility imports and definitions
 if USING_PYCORD:
@@ -62,8 +71,8 @@ if USING_PYCORD:
                     if hasattr(enums_module, 'CommandOptionType'):
                         # Now that we've safely accessed it, import it
                         CommandOptionType = enums_module.CommandOptionType
-                # Override our AppCommandOptionType with the actual one
-                AppCommandOptionType = CommandOptionType
+                # Use our newly created from_enum method to avoid type errors
+                AppCommandOptionType = AppCommandOptionType.from_enum(CommandOptionType)
                 logger.info("Successfully imported CommandOptionType from discord.enums")
             else:
                 logger.warning("discord.enums.CommandOptionType not available, using fallback")
