@@ -86,6 +86,8 @@ class MockAppCommands:
     """Mock app_commands module for compatibility"""
     def __init__(self):
         self.logger = logger
+        # Add support for Choice for autocomplete
+        self.Choice = type('Choice', (), {'__init__': lambda s, name, value: setattr(s, 'name', name) or setattr(s, 'value', value)})
     
     def command(self, name=None, description=None):
         def decorator(func):
@@ -97,10 +99,15 @@ class MockAppCommands:
             return func
         return decorator
     
-    def autocomplete(self, callback=None):
+    def autocomplete(self, **kwargs):
         def decorator(func):
             return func
         return decorator
+
+class MockCommandTree:
+    """Mock command tree for compatibility"""
+    async def sync(self, *args, **kwargs):
+        return []  # Return empty list as if no commands were synced
 
 # Set up compatibility layers in discord if needed
 if USING_DISCORDPY and discord is not None:
@@ -112,6 +119,18 @@ if USING_DISCORDPY and discord is not None:
             # Use setattr to avoid direct attribute assignment that might be flagged by LSP
             setattr(discord, 'app_commands', mock_app_commands)
             logger.info("Added compatibility app_commands to discord module")
+            
+        # Patch the Bot class to add tree support
+        if hasattr(discord.ext, 'commands') and hasattr(discord.ext.commands, 'Bot'):
+            original_init = discord.ext.commands.Bot.__init__
+            
+            def patched_init(self, *args, **kwargs):
+                original_init(self, *args, **kwargs)
+                if not hasattr(self, 'tree'):
+                    self.tree = MockCommandTree()
+            
+            discord.ext.commands.Bot.__init__ = patched_init
+            logger.info("Patched Bot class to add tree support")
     except Exception as e:
         logger.error(f"Error setting up discord.py compatibility: {e}")
 
@@ -152,3 +171,18 @@ def get_app_commands_module():
         # For discord.py, use discord.app_commands
         return getattr(discord, 'app_commands', None)
     return None
+
+# Add hybrid_group to discord.ext.commands
+if USING_DISCORDPY and discord is not None and hasattr(discord, 'ext') and hasattr(discord.ext, 'commands'):
+    if not hasattr(discord.ext.commands, 'hybrid_group'):
+        def hybrid_group(*args, **kwargs):
+            """Mock hybrid_group decorator that falls back to group"""
+            group_decorator = discord.ext.commands.group(*args, **kwargs)
+            def decorator(func):
+                func = group_decorator(func)
+                return func
+            return decorator
+            
+        # Add our mock hybrid_group
+        discord.ext.commands.hybrid_group = hybrid_group
+        logger.info("Added compatibility hybrid_group to discord.ext.commands")
