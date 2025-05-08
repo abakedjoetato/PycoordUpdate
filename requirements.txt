@@ -50,3 +50,17 @@ trafilatura
 werkzeug
 wtforms
 py-cord
+aiofiles
+aiohttp
+asyncio
+asyncssh
+discord.py
+dnspython
+motor
+paramiko
+pillow
+psutil
+py-cord
+pymongo[srv]
+python-dotenv
+pytz
