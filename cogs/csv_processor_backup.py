@@ -997,8 +997,8 @@ class CSVProcessorCog(commands.Cog):
                 guild_id = str(interaction.guild_id)
                 guild_doc = await self.bot.db.guilds.find_one({"guild_id": guild_id})
                 if guild_doc and "default_server_id" in guild_doc:
-                    raw_server_id = guild_doc.get("default_server_id", "")
-                    server_id = standardize_server_id(str(raw_server_id))
+                    raw_server_id = guild_doc["default_server_id"]
+                    server_id = standardize_server_id(raw_server_id)
                     logger.info(f"Using default server ID from guild config: {raw_server_id} (standardized to {server_id})")
                 else:
                     # No default server configured
