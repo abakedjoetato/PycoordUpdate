@@ -11,7 +11,27 @@ import logging
 import os
 import re
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Union, Tuple, cast
+from typing import Dict, List, Optional, Any, Union, Tuple, cast, TypeVar, Protocol, TYPE_CHECKING, Coroutine
+
+# Import and define types
+from discord.ext.commands import Bot
+
+# Type definition for bot with db property
+class MotorDatabase(Protocol):
+    """Protocol defining the motor database interface"""
+    def __getattr__(self, name: str) -> Any: ...
+    async def find_one(self, query: Dict[str, Any]) -> Optional[Dict[str, Any]]: ...
+    async def find(self, query: Dict[str, Any]) -> Any: ...
+    
+class PvPBot(Protocol):
+    """Protocol defining the PvPBot interface with required properties"""
+    @property
+    def db(self) -> Optional[MotorDatabase]: ...
+    def wait_until_ready(self) -> Coroutine[Any, Any, None]: ...
+    @property
+    def user(self) -> Optional[discord.User]: ...
+        
+T = TypeVar('T')
 
 import discord
 from discord.ext import commands, tasks
@@ -35,11 +55,11 @@ logger = logging.getLogger(__name__)
 class CSVProcessorCog(commands.Cog):
     """Commands and background tasks for processing CSV files"""
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: 'PvPBot'):
         """Initialize the CSV processor cog
 
         Args:
-            bot: Discord bot instance
+            bot: PvPBot instance with db property
         """
         self.bot = bot
         self.csv_parser = CSVParser()

@@ -8,6 +8,8 @@ import os
 import sys
 import asyncio
 import logging
+from typing import Dict, List, Optional, Any, Union, TypeVar, Callable, Tuple, Coroutine
+
 import discord
 from discord.ext import commands
 from discord.commands import Option, OptionChoice, SlashCommandGroup
@@ -15,6 +17,10 @@ from discord.enums import SlashCommandOptionType
 from utils.database import get_db
 from models.guild import Guild
 from utils.sftp import periodic_connection_maintenance
+
+# Type definitions for improved type checking
+T = TypeVar('T')
+MotorDatabase = Any  # Motor database connection type
 
 # Configure logging
 logging.basicConfig(
@@ -61,28 +67,25 @@ async def sync_guilds_with_database(bot):
 async def initialize_bot(force_sync=False):
     """Initialize the Discord bot and load cogs"""
     # Create bot instance with hardcoded owner ID
-    # Using proper py-cord Bot initialization
-    # Import types at the module level
-    from typing import Dict, Any, Optional
-    import asyncio
+    # Using proper py-cord Bot initialization with type hints
     
     class PvPBot(commands.Bot):
         """Custom Bot class with additional attributes for our application"""
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             # Initialize private attributes with proper typing
-            self._db: Optional[Any] = None
+            self._db: Optional[MotorDatabase] = None
             self._background_tasks: Dict[str, asyncio.Task] = {}
             self._sftp_connections: Dict[str, Any] = {}
             self._home_guild_id: Optional[int] = None
         
         @property
-        def db(self) -> Any:
+        def db(self) -> Optional[MotorDatabase]:
             """Database connection getter"""
             return self._db
             
         @db.setter
-        def db(self, value: Any) -> None:
+        def db(self, value: Optional[MotorDatabase]) -> None:
             """Database connection setter"""
             self._db = value
             
