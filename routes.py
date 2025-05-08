@@ -52,7 +52,8 @@ def log_admin_action(action, details):
 @app.route('/')
 def index():
     """Home page"""
-    return render_template('index.html', title='Home')
+    last_started = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return render_template('index.html', title='Home', last_started=last_started)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -474,7 +475,14 @@ def internal_error(error):
 @app.context_processor
 def inject_site_config():
     """Inject site configuration into all templates"""
-    configs = WebConfig.query.all()
-    config_dict = {c.key: c.value for c in configs}
+    try:
+        configs = WebConfig.query.all()
+        config_dict = {c.key: c.value for c in configs}
+    except Exception:
+        # If table doesn't exist yet, return empty dict
+        config_dict = {
+            'site_name': 'Tower of Temptation PvP Stats',
+            'allow_registration': 'true'
+        }
     
     return {'site_config': config_dict}

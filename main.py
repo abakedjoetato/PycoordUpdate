@@ -1,12 +1,11 @@
 """
-Tower of Temptation PvP Statistics Discord Bot
-Main entry point
+Tower of Temptation PvP Statistics Bot Web Interface
+Main entry point for Flask application
 """
 import os
 import sys
-import asyncio
 import logging
-from bot import main as bot_main
+from app import app
 
 # Configure logging
 logging.basicConfig(
@@ -14,18 +13,21 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler('bot.log')
+        logging.FileHandler('web.log')
     ]
 )
 logger = logging.getLogger('main')
 
+# Import routes to register them with Flask
+from routes import *
+
 if __name__ == "__main__":
-    logger.info("Starting Tower of Temptation PvP Statistics Discord Bot")
+    logger.info("Starting Tower of Temptation PvP Statistics Web Interface")
     try:
-        # Run the bot
-        sys.exit(bot_main())
+        # Run the web app
+        app.run(host='0.0.0.0', port=5000, debug=True)
     except KeyboardInterrupt:
-        logger.info("Bot stopped by user")
+        logger.info("Web server stopped by user")
     except Exception as e:
-        logger.error(f"Error starting bot: {e}", exc_info=True)
+        logger.error(f"Error starting web server: {e}", exc_info=True)
         sys.exit(1)
