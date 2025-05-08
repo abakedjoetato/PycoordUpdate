@@ -227,7 +227,7 @@ class Admin(commands.Cog):
                 logger.warning(f"Error counting documents: {e}")
 
             # Create embed
-            embed = EmbedBuilder.create_base_embed(
+            embed = await EmbedBuilder.create_base_embed(
                 "Bot Status",
                 "Current statistics and performance information"
             , guild=guild_model)
@@ -259,7 +259,7 @@ class Admin(commands.Cog):
 
         except Exception as e:
             logger.error(f"Error getting status: {e}", exc_info=True)
-            embed = EmbedBuilder.create_error_embed(
+            embed = await EmbedBuilder.create_error_embed(
                 "Error",
                 f"An error occurred while getting bot status: {e}"
             , guild=guild_model)
@@ -382,7 +382,7 @@ class Admin(commands.Cog):
         except Exception as e:
             logger.warning(f"Error getting guild model: {e}")
 
-        embed = EmbedBuilder.create_base_embed(
+        embed = await EmbedBuilder.create_base_embed(
             "Admin Commands Help",
             "List of available admin commands and their usage"
         , guild=guild_model)
