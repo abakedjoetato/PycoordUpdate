@@ -14,12 +14,11 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 
 import discord
-import discord
 # Use app_commands via discord.app_commands for py-cord compatibility
-from discord.ext import commands
+from discord.ext import commands, tasks
 # Ensure discord_compat is imported for py-cord compatibility
 from utils.discord_compat import get_app_commands_module
-app_commands = get_app_commands_module(), tasks
+app_commands = get_app_commands_module()
 
 from utils.csv_parser import CSVParser
 from utils.sftp import SFTPManager
@@ -62,17 +61,12 @@ class LogProcessorCog(commands.Cog):
         self.is_processing = False
         self.last_processed = {}  # Track last processed timestamp per server
 
-        # Create task loop
-        self.process_logs_task = tasks.loop(minutes=1.0)(self.process_logs_task)
-        # Before loop hook
-        self.process_logs_task.before_loop(self.before_process_logs_task)
         # Start background task
         self.process_logs_task.start()
 
     def cog_unload(self):
         """Stop background tasks and close connections when cog is unloaded"""
-        if hasattr(self.process_logs_task, 'cancel'):
-            self.process_logs_task.cancel()
+        self.process_logs_task.cancel()
 
         # Close all SFTP connections
         for server_id, sftp_manager in self.sftp_managers.items():

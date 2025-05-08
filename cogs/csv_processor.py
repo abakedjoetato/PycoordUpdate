@@ -49,17 +49,12 @@ class CSVProcessorCog(commands.Cog):
         self.is_processing = False
         self.last_processed = {}  # Track last processed timestamp per server
 
-        # Create task loop
-        self.process_csv_files_task = tasks.loop(minutes=5.0)(self.process_csv_files_task)
-        # Before loop hook
-        self.process_csv_files_task.before_loop(self.before_process_csv_files_task)
         # Start background task
         self.process_csv_files_task.start()
 
     def cog_unload(self):
         """Stop background tasks and close connections when cog is unloaded"""
-        if hasattr(self.process_csv_files_task, 'cancel'):
-            self.process_csv_files_task.cancel()
+        self.process_csv_files_task.cancel()
 
         # Close all SFTP connections
         for server_id, sftp_manager in self.sftp_managers.items():
@@ -68,6 +63,7 @@ class CSVProcessorCog(commands.Cog):
             except Exception as e:
                 logger.error(f"Error disconnecting SFTP for server {server_id}: {e}")
 
+    @tasks.loop(minutes=5.0)
     async def process_csv_files_task(self):
         """Background task for processing CSV files
 
@@ -100,6 +96,7 @@ class CSVProcessorCog(commands.Cog):
         finally:
             self.is_processing = False
 
+    @process_csv_files_task.before_loop
     async def before_process_csv_files_task(self):
         """Wait for bot to be ready before starting task"""
         await self.bot.wait_until_ready()
