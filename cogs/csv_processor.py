@@ -896,6 +896,9 @@ class CSVProcessorCog(commands.Cog):
             except Exception as e:
                 logger.error(f"SFTP error for server {server_id}: {str(e)}")
                 return 0, 0
+        finally:
+            # This block always executes regardless of exceptions
+            logger.debug(f"CSV processing completed for server {server_id}")
 
     async def run_historical_parse(self, server_id: str, days: int = 30) -> Tuple[int, int]:
         """Run a historical parse for a server, checking further back in time
