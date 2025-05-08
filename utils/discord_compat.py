@@ -57,8 +57,14 @@ class AppCommandOptionType:
                     setattr(self, attr_name, getattr(discord.enums.SlashCommandOptionType, attr_name))
             logger.info("Initialized AppCommandOptionType with SlashCommandOptionType values")
 
-# Create a singleton instance for global use
+# Create AppCommandOptionType instance and also export it to discord.enums for direct imports
 app_command_option_type = AppCommandOptionType()
+
+# Add to discord.enums for backwards compatibility with direct imports
+if discord is not None and hasattr(discord, 'enums'):
+    if not hasattr(discord.enums, 'AppCommandOptionType'):
+        setattr(discord.enums, 'AppCommandOptionType', app_command_option_type)
+        logger.info("Added AppCommandOptionType to discord.enums for import compatibility")
 
 # Create app_commands compatibility layer for py-cord
 class AppCommandsCompatLayer:
@@ -97,8 +103,38 @@ class AppCommandsCompatLayer:
             return func
         return decorator
     
-    def autocomplete(self, param_name=None):
-        """Maps to py-cord's autocomplete system"""
+    def autocomplete(self, param_name=None, **kwargs):
+        """Maps to py-cord's autocomplete system
+        
+        This supports both discord.py style:
+            @app_commands.autocomplete(param_name="name")
+        
+        And py-cord style:
+            @app_commands.autocomplete(server_id=server_id_autocomplete)
+        """
+        # Handle direct call with server_id= style (py-cord pattern)
+        if 'server_id' in kwargs:
+            callback = kwargs.get('server_id')
+            
+            def decorator(func):
+                if not hasattr(func, "_param_autocomplete"):
+                    func._param_autocomplete = {}
+                func._param_autocomplete["server_id"] = callback
+                return func
+            return decorator
+        
+        # Handle callback= style (our compatibility layer)
+        if 'callback' in kwargs:
+            callback = kwargs.get('callback')
+            
+            def decorator(func):
+                if not hasattr(func, "_param_autocomplete"):
+                    func._param_autocomplete = {}
+                func._param_autocomplete[param_name] = callback
+                return func
+            return decorator
+        
+        # Handle discord.py style (@app_commands.autocomplete("name"))
         def decorator(callback_func):
             # Associate the autocomplete callback with the parameter
             if not hasattr(callback_func, "_param_autocomplete"):

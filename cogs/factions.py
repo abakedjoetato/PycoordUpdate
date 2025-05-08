@@ -14,8 +14,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union, Literal
 
 import discord
-from discord import app_commands
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
 from discord.ext import commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
 
 from models.faction import Faction, FACTION_ROLES
 from utils.embed_builder import EmbedBuilder
@@ -155,7 +159,7 @@ class FactionsCog(commands.Cog):
         description="The faction description",
         color="The faction color (hex code or color name)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Factions require premium tier 2+
     async def _faction_create(
         self,
@@ -283,7 +287,7 @@ class FactionsCog(commands.Cog):
         server_id="The server ID (default: first available server)",
         name="The faction name or tag"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Factions require premium tier 2+
     async def _faction_info(
         self,
@@ -368,7 +372,7 @@ class FactionsCog(commands.Cog):
     @app_commands.describe(
         server_id="The server ID (default: first available server)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Factions require premium tier 2+
     async def _faction_list(
         self,
@@ -413,7 +417,7 @@ class FactionsCog(commands.Cog):
         server_id="The server ID (default: first available server)",
         name="The faction name or tag"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Factions require premium tier 2+
     async def _faction_join(
         self,
@@ -513,7 +517,7 @@ class FactionsCog(commands.Cog):
     @app_commands.describe(
         server_id="The server ID (default: first available server)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Factions require premium tier 2+
     async def _faction_leave(
         self,
@@ -601,7 +605,7 @@ class FactionsCog(commands.Cog):
         faction_name="The faction name or tag",
         player_name="The player name to add"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @app_commands.checks.has_permissions(manage_guild=True)
     @premium_tier_required(2)  # Factions require premium tier 2+
     async def _faction_add(
@@ -696,7 +700,7 @@ class FactionsCog(commands.Cog):
         faction_name="The faction name or tag",
         player_name="The player name to remove"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @app_commands.checks.has_permissions(manage_guild=True)
     @premium_tier_required(2)  # Factions require premium tier 2+
     async def _faction_remove(
@@ -801,7 +805,7 @@ class FactionsCog(commands.Cog):
         player_name="The player name to promote",
         role="The role to promote to (member, officer, leader)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Factions require premium tier 2+
     async def _faction_promote(
         self,

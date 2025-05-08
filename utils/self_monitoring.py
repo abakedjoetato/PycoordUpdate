@@ -25,7 +25,10 @@ import json
 import functools
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module(), tasks
 
 from utils.command_handlers import get_latest_command_errors, get_recurring_error_patterns
 from utils.async_utils import BackgroundTask

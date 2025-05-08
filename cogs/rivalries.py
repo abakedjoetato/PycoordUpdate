@@ -13,8 +13,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union, Literal
 
 import discord
-from discord import app_commands
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
 from discord.ext import commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
 
 from models.rivalry import Rivalry
 from models.player_link import PlayerLink
@@ -187,7 +191,7 @@ class RivalriesCog(commands.Cog):
         server_id="The server ID (default: first available server)",
         limit="Maximum number of rivalries to show (default: 10)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     async def _rivalries_list(
         self,
         interaction: discord.Interaction,
@@ -285,7 +289,7 @@ class RivalriesCog(commands.Cog):
         server_id="The server ID (default: first available server)",
         player_name="The player name to view rivalries for"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     async def _rivalries_player(
         self,
         interaction: discord.Interaction,
@@ -405,7 +409,7 @@ class RivalriesCog(commands.Cog):
         server_id="The server ID (default: first available server)",
         limit="Maximum number of rivalries to show (default: 10)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     async def _rivalries_top(
         self,
         interaction: discord.Interaction,
@@ -484,7 +488,7 @@ class RivalriesCog(commands.Cog):
         server_id="The server ID (default: first available server)",
         limit="Maximum number of rivalries to show (default: 10)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     async def _rivalries_closest(
         self,
         interaction: discord.Interaction,
@@ -564,7 +568,7 @@ class RivalriesCog(commands.Cog):
         limit="Maximum number of rivalries to show (default: 10)",
         days="Number of days to look back (default: 7)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     async def _rivalries_recent(
         self,
         interaction: discord.Interaction,
@@ -646,7 +650,7 @@ class RivalriesCog(commands.Cog):
         player1="First player name",
         player2="Second player name"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     async def _rivalries_between(
         self,
         interaction: discord.Interaction,
@@ -736,7 +740,7 @@ class RivalriesCog(commands.Cog):
         location="Kill location (optional)"
     )
     @app_commands.checks.has_permissions(administrator=True)
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     async def _rivalries_record_kill(
         self,
         interaction: discord.Interaction,

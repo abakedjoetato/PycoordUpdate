@@ -11,8 +11,12 @@ import logging
 import asyncio
 from datetime import datetime
 import discord
-from discord import app_commands
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
 from discord.ext import commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
 from typing import Optional, Dict, List, Any
 
 from models.player import Player
@@ -40,7 +44,7 @@ class PlayerLinksCog(commands.Cog):
         player_name="The in-game player name to link to your Discord account",
         server_id="The server ID (default: first available server)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(0)  # Available to all users (Tier 0+)
     async def link_player(
         self,
@@ -106,7 +110,7 @@ class PlayerLinksCog(commands.Cog):
         player_name="The in-game player name to unlink from your Discord account",
         server_id="The server ID (default: first available server)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(0)  # Available to all users (Tier 0+)
     async def unlink_player(
         self,
@@ -179,7 +183,7 @@ class PlayerLinksCog(commands.Cog):
     @app_commands.describe(
         server_id="The server ID (default: first available server)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(0)  # Available to all users (Tier 0+)
     async def view_linked_players(
         self,

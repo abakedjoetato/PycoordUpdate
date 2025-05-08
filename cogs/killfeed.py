@@ -7,7 +7,11 @@ import time
 import os
 import discord
 from discord.ext import commands
-from discord import app_commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 
@@ -38,7 +42,7 @@ class Killfeed(commands.Cog):
 
     @killfeed.command(name="start", description="Start monitoring killfeed for a server")
     @app_commands.describe(server_id="Select a server by name to monitor")
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(0)  # Killfeed available in free tier (0+)
     async def start(self, ctx, server_id: str):
         """Start the killfeed monitor for a server"""
@@ -137,7 +141,7 @@ class Killfeed(commands.Cog):
 
     @killfeed.command(name="stop", description="Stop monitoring killfeed for a server")
     @app_commands.describe(server_id="Select a server by name to stop monitoring")
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(0)  # Killfeed available in free tier (0+)
     async def stop(self, ctx, server_id: str):
         """Stop the killfeed monitor for a server"""

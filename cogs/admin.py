@@ -6,6 +6,9 @@ import logging
 import asyncio
 import discord
 from discord.ext import commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
 from utils.discord_compat import get_app_commands_module
 # Use compatibility layer to handle different Discord library versions
 app_commands = get_app_commands_module()

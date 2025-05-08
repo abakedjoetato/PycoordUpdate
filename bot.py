@@ -1,6 +1,8 @@
 """
 Tower of Temptation PvP Statistics Discord Bot
 Main bot initialization and configuration
+
+This implementation uses py-cord (discord.py fork) as the Discord API library.
 """
 import os
 import sys
@@ -8,6 +10,8 @@ import asyncio
 import logging
 import discord
 from discord.ext import commands
+from discord.commands import Option, OptionChoice, SlashCommandGroup
+from discord.enums import SlashCommandOptionType
 from utils.database import get_db
 from models.guild import Guild
 from utils.sftp import periodic_connection_maintenance

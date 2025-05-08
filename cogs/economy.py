@@ -11,7 +11,11 @@ This module handles all economy-related commands including:
 import logging
 import discord
 from discord.ext import commands
-from discord import app_commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
 from typing import Optional, List, Dict, Any, Union
 import random
 import asyncio
@@ -47,7 +51,7 @@ class Economy(commands.Cog):
 
     @economy.command(name="balance", description="Check your balance")
     @app_commands.describe(server_id="Select a server by name to check balance for")
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Economy requires premium tier 2+
     async def balance(self, ctx, server_id: str):
         """Check your balance"""
@@ -118,7 +122,7 @@ class Economy(commands.Cog):
 
     @economy.command(name="daily", description="Claim your daily reward")
     @app_commands.describe(server_id="Select a server by name to claim daily reward for")
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Economy requires premium tier 2+
     async def daily(self, ctx, server_id: str):
         """Claim your daily reward"""
@@ -169,7 +173,7 @@ class Economy(commands.Cog):
 
     @economy.command(name="leaderboard", description="View the richest players")
     @app_commands.describe(server_id="Select a server by name to check leaderboard for")
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Economy requires premium tier 2+
     async def leaderboard(self, ctx, server_id: str):
         """View the richest players on a server"""
@@ -231,7 +235,7 @@ class Economy(commands.Cog):
         server_id="Select a server by name to play on",
         bet="The amount to bet (default: 10)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Gambling requires premium tier 2+
     async def blackjack(self, ctx, server_id: str, bet: int = 10):
         """Play blackjack"""
@@ -344,7 +348,7 @@ class Economy(commands.Cog):
         server_id="Select a server by name to play on",
         bet="The amount to bet (default: 10)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Gambling requires premium tier 2+
     async def slots(self, ctx, server_id: str, bet: int = 10):
         """Play slots"""
@@ -418,7 +422,7 @@ class Economy(commands.Cog):
         user="The user to give credits to",
         amount="The amount to give"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Economy requires premium tier 2+
     async def give(self, ctx, server_id: str, user: discord.Member, amount: int):
         """Give credits to another player"""
@@ -546,7 +550,7 @@ class Economy(commands.Cog):
         amount="The amount to add (positive) or remove (negative)",
         reason="Reason for the adjustment"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @has_admin_permission()
     @premium_tier_required(2)  # Economy requires premium tier 2+
     async def adjust_credits(self, ctx, server_id: str, user: discord.Member, amount: int, reason: str = "Admin adjustment"):
@@ -664,7 +668,7 @@ class Economy(commands.Cog):
         user="The user to view transactions for (admins only)",
         limit="Maximum number of transactions to show"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Economy requires premium tier 2+
     async def transactions(self, ctx, server_id: str, user: Optional[discord.Member] = None, limit: int = 10):
         """View your transaction history or another user's (admin only)"""
@@ -812,7 +816,7 @@ class Economy(commands.Cog):
     @app_commands.describe(
         server_id="Select a server by name"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @has_admin_permission()
     @premium_tier_required(2)  # Economy requires premium tier 2+
     async def economy_stats(self, ctx, server_id: str):
@@ -920,7 +924,7 @@ class Economy(commands.Cog):
         server_id="Select a server by name to play on",
         bet="The amount to bet (default: 10)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(2)  # Gambling requires premium tier 2+
     async def roulette(self, ctx, server_id: str, bet: int = 10):
         """Play roulette"""

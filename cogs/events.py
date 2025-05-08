@@ -6,7 +6,11 @@ import asyncio
 import time
 import discord
 from discord.ext import commands
-from discord import app_commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 
@@ -115,7 +119,7 @@ class Events(commands.Cog):
 
     @events.command(name="start", description="Start monitoring events for a server")
     @app_commands.describe(server_id="Select a server by name to monitor")
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(1)  # Events monitoring requires premium tier 1+
     async def start(self, ctx, server_id: str):
         """Start the events monitor for a server"""
@@ -223,7 +227,7 @@ class Events(commands.Cog):
 
     @events.command(name="stop", description="Stop monitoring events for a server")
     @app_commands.describe(server_id="Select a server by name to stop monitoring")
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     async def stop(self, ctx, server_id: str):
         """Stop the events monitor for a server"""
 
@@ -389,7 +393,7 @@ class Events(commands.Cog):
         app_commands.Choice(name="Special Encounters", value="encounter"),
         app_commands.Choice(name="Server Restarts", value="server_restart")
     ])
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(1)  # Events monitoring requires premium tier 1+
     async def list_events(self, ctx, server_id: str, event_type: str = "all", limit: int = 10):
         """List recent events for a server"""
@@ -519,7 +523,7 @@ class Events(commands.Cog):
 
     @events.command(name="players", description="List online players for a server")
     @app_commands.describe(server_id="Select a server by name to list players for")
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(1)  # Player connections requires premium tier 1+
     async def online_players(self, ctx, server_id: str):
         """List online players for a server"""
@@ -626,7 +630,7 @@ class Events(commands.Cog):
         encounter="Enable encounter event notifications (True/False)",
         server_restart="Enable server restart notifications (True/False)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(1)  # Events configuration requires premium tier 1+
     async def configure_events(self, ctx, server_id: str, 
                              mission: Optional[bool] = None,
@@ -757,7 +761,7 @@ class Events(commands.Cog):
         connect="Enable player connection notifications (True/False)",
         disconnect="Enable player disconnection notifications (True/False)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(1)  # Connection configuration requires premium tier 1+
     async def configure_connections(self, ctx, server_id: str, 
                                 connect: Optional[bool] = None,
@@ -873,7 +877,7 @@ class Events(commands.Cog):
         fall="Enable fall damage suicide notifications (True/False)",
         other="Enable other suicide notifications (True/False)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @premium_tier_required(1)  # Suicide notification configuration requires premium tier 1+
     async def configure_suicides(self, ctx, server_id: str, 
                                menu: Optional[bool] = None,

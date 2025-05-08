@@ -14,7 +14,10 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union, Tuple
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module(), tasks
 # Use compatibility layer to handle different Discord library versions
 from utils.discord_compat import get_app_commands_module, AppCommandOptionType
 
@@ -968,7 +971,7 @@ class CSVProcessorCog(commands.Cog):
         server_id="The server ID to process CSV files for",
         hours="Number of hours to look back (default: 24)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for CSV processing
     async def process_csv_command(
@@ -1112,7 +1115,7 @@ class CSVProcessorCog(commands.Cog):
         server_id="The server ID to process historical data for",
         days="Number of days to look back (default: 30)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier
     async def historical_parse_command(

@@ -14,8 +14,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Tuple
 
 import discord
-from discord import app_commands
-from discord.ext import commands, tasks
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
+from discord.ext import commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module(), tasks
 
 from utils.csv_parser import CSVParser
 from utils.sftp import SFTPManager
@@ -32,7 +36,7 @@ logger = logging.getLogger(__name__)
 class LogProcessorCog(commands.Cog):
     """Commands and background tasks for processing game log files"""
 
-    async def server_id_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
+    async def server_id_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice(name=str]]:
         """Autocomplete for server selection by name, returns server_id as value
 
         Args:
@@ -475,7 +479,7 @@ class LogProcessorCog(commands.Cog):
         server_id="The server ID to process logs for",
         minutes="Number of minutes to look back (default: 15)"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for log processing
     async def process_logs_command(

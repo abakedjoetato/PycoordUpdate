@@ -7,7 +7,11 @@ import re
 import psutil
 import discord
 from discord.ext import commands
-from discord import app_commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
 from typing import Dict, List, Any, Optional
 import asyncio
 from datetime import datetime
@@ -383,7 +387,7 @@ class Setup(commands.Cog):
     @app_commands.describe(
         server_id="ID of the server to remove"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     @app_commands.guild_only()
     async def remove_server(self, ctx, server_id: str):
         """Remove a server from tracking"""
@@ -729,7 +733,7 @@ class Setup(commands.Cog):
         server_id="ID of the server to configure",
         killfeed_channel="Channel for kill notifications"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
+    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
     async def configure_channels(self, ctx, server_id: str, killfeed_channel: discord.TextChannel = None):
         """Configure notification channels for a server"""
         try:
