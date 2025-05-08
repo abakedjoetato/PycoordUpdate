@@ -12,20 +12,24 @@ from typing import Any, Optional, Union, Dict, List
 
 logger = logging.getLogger(__name__)
 
+# Import discord here to ensure it's available for the entire module
+try:
+    import discord
+except ImportError:
+    logger.error("Failed to import discord library")
+    discord = None
+
 # Detect which Discord library we're using
 USING_PYCORD = False
 USING_DISCORDPY = False
 
-try:
-    import discord
+if discord is not None:
     if hasattr(discord, '__title__') and discord.__title__ == 'py-cord':
         USING_PYCORD = True
         logger.info("Detected py-cord library")
     else:
         USING_DISCORDPY = True
         logger.info("Detected discord.py library")
-except ImportError:
-    logger.error("Failed to import discord library")
 
 # Define our compatibility classes
 class AppCommandOptionType:
@@ -45,33 +49,45 @@ if USING_PYCORD:
     try:
         # For py-cord
         from discord.commands import Option, OptionChoice
-        # Import the actual CommandOptionType from py-cord
+        # Import py-cord specific types
         try:
-            from discord.enums import CommandOptionType
-            # Override our AppCommandOptionType with the actual one
-            AppCommandOptionType = CommandOptionType
-        except ImportError:
-            logger.warning("Could not import CommandOptionType from py-cord, using fallback")
+            # Try to import CommandOptionType if available
+            try:
+                from discord.enums import CommandOptionType
+                # Override our AppCommandOptionType with the actual one
+                AppCommandOptionType = CommandOptionType
+            except ImportError:
+                logger.warning("Could not import CommandOptionType from py-cord, using fallback")
+                
+            # Add additional py-cord specific imports here
+        except Exception as e:
+            logger.warning(f"Error during py-cord imports: {e}")
     except ImportError as e:
         logger.error(f"Error importing py-cord components: {e}")
 
 # Set up compatibility layers in discord if needed
-if USING_DISCORDPY:
+if USING_DISCORDPY and discord is not None:
     try:
         # For discord.py, add our compatibility type to the discord module
         if not hasattr(discord, 'app_commands'):
-            # Create a mock app_commands module
+            # Create a mock app_commands module as a class with expected methods
             class MockAppCommands:
-                pass
-            
-            # Add describe method
-            def describe(**kwargs):
-                def decorator(func):
-                    return func
-                return decorator
+                """Mock app_commands module for compatibility"""
+                def command(self, name=None, description=None):
+                    def decorator(func):
+                        return func
+                    return decorator
                 
-            # Add our compatibility classes
-            MockAppCommands.describe = describe
+                def describe(self, **kwargs):
+                    def decorator(func):
+                        return func
+                    return decorator
+                
+                def autocomplete(self, callback=None):
+                    def decorator(func):
+                        return func
+                    return decorator
+            
             # Add to discord module
             discord.app_commands = MockAppCommands()
             logger.info("Added compatibility app_commands to discord")

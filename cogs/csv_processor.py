@@ -316,11 +316,14 @@ class CSVProcessorCog(commands.Cog):
         # Format for SFTP directory listing comparison
         last_time_str = last_time.strftime("%Y.%m.%d-%H.%M.%S")
 
+        # Initialize return values
+        files_processed = 0
+        events_processed = 0
+        
         try:
             # Create a new SFTP client for this server if none exists
             if server_id not in self.sftp_managers:
                 logger.debug(f"Creating new SFTP manager for server {server_id}")
-                try:
                 # Create SFTPManager with the correct parameter mapping
                 # Get original_server_id if it exists, otherwise use server_id
                 original_server_id = config.get("original_server_id")
