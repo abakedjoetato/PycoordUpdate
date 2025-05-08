@@ -373,7 +373,14 @@ if USING_PYCORD and discord is not None:
                     def decorator(func):
                         # Apply group decorator first
                         try:
-                            result = commands.group(name=name_param, **kwargs)(func)
+                            # Ensure name is not None to fix py-cord compatibility
+                            group_name = name_param if name_param is not None else func.__name__
+                            
+                            # Create a copy of kwargs without name parameter
+                            safe_kwargs = {k: v for k, v in kwargs.items() if k != 'name'}
+                            
+                            # Apply command group with safe name
+                            result = commands.group(name=group_name, **safe_kwargs)(func)
                         except Exception as e:
                             logger.error(f"Error applying group decorator: {e}")
                             result = func  # Fallback to original function
@@ -392,9 +399,45 @@ if USING_PYCORD and discord is not None:
                     
                     return decorator
                 
-                # Add hybrid_group to commands module
-                commands.hybrid_group = hybrid_group
-                logger.info("Added hybrid_group compatibility to commands")
+                # For py-cord 2.6.1, we need to explicitly define hybrid_group in the commands module
+                from types import MethodType
+                
+                def add_hybrid_group_to_commands() -> None:
+                    """Add hybrid_group as a properly typed method to commands module"""
+                    try:
+                        # Only create if it doesn't already exist
+                        if not hasattr(commands, 'hybrid_group'):
+                            # Define it as a proper function with the same signature as commands.group
+                            def hybrid_group_impl(name=None, **attrs):
+                                """
+                                A decorator that transforms a function into a hybrid command group.
+                                A hybrid command can be invoked either as a regular text command or as a slash command.
+                                
+                                This is equivalent to using @commands.group and @discord.slash_command together.
+                                """
+                                def decorator(func):
+                                    # Use name from function if not provided
+                                    cmd_name = name or func.__name__
+                                    # Apply regular group decorator
+                                    result = commands.group(name=cmd_name, **attrs)(func)
+                                    # Apply slash command decorator if available
+                                    if hasattr(discord, 'slash_command'):
+                                        result = discord.slash_command(
+                                            name=cmd_name,
+                                            description=attrs.get('description', 'No description')
+                                        )(result)
+                                    return result
+                                return decorator
+                            
+                            # Add the implementation to the commands module
+                            commands.hybrid_group = hybrid_group_impl
+                            logger.info("Added hybrid_group to commands module successfully")
+                    except Exception as e:
+                        logger.error(f"Error adding hybrid_group to commands: {e}")
+                
+                # Execute immediately
+                add_hybrid_group_to_commands()
+                logger.info("Hybrid group setup complete")
         except Exception as e:
             logger.error(f"Failed to set up hybrid_group compatibility: {e}")
     except Exception as e:

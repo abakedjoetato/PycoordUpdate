@@ -70,11 +70,11 @@ async def initialize_bot(force_sync=False):
         """Custom Bot class with additional attributes for our application"""
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
-            # Initialize private attributes
-            self._db = None
-            self._background_tasks = {}
-            self._sftp_connections = {}
-            self._home_guild_id = None
+            # Initialize private attributes with proper typing
+            self._db: Optional[Any] = None
+            self._background_tasks: Dict[str, asyncio.Task] = {}
+            self._sftp_connections: Dict[str, Any] = {}
+            self._home_guild_id: Optional[int] = None
         
         @property
         def db(self) -> Any:
@@ -82,7 +82,7 @@ async def initialize_bot(force_sync=False):
             return self._db
             
         @db.setter
-        def db(self, value: Any):
+        def db(self, value: Any) -> None:
             """Database connection setter"""
             self._db = value
             
