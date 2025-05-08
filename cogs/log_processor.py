@@ -478,7 +478,7 @@ class LogProcessorCog(commands.Cog):
         server_id="The server ID to process logs for",
         minutes="Number of minutes to look back (default: 15)"
     )
-    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
+    @app_commands.autocomplete(server_id=server_id_autocomplete)
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for log processing
     async def process_logs_command(
@@ -516,7 +516,7 @@ class LogProcessorCog(commands.Cog):
         server_configs = await self._get_server_configs()
 
         if not server_id or server_id not in server_configs:
-            embed = EmbedBuilder.create_error_embed(
+            embed = await EmbedBuilder.create_error_embed(
                 title="Server Not Found",
                 description=f"No SFTP configuration found for server `{server_id}`."
             )
@@ -535,12 +535,12 @@ class LogProcessorCog(commands.Cog):
                 )
 
                 if files_processed > 0:
-                    embed = EmbedBuilder.create_success_embed(
+                    embed = await EmbedBuilder.create_success_embed(
                         title="Log Processing Complete",
                         description=f"Processed {files_processed} log file(s) with {events_processed} events."
                     )
                 else:
-                    embed = EmbedBuilder.create_info_embed(
+                    embed = await EmbedBuilder.create_info_embed(
                         title="No Files Found",
                         description=f"No new log files found for server `{server_id}` in the last {minutes} minutes."
                     )
@@ -550,7 +550,7 @@ class LogProcessorCog(commands.Cog):
 
             except Exception as e:
                 logger.error(f"Error processing log files: {str(e)}")
-                embed = EmbedBuilder.create_error_embed(
+                embed = await EmbedBuilder.create_error_embed(
                     title="Processing Error",
                     description=f"An error occurred while processing log files: {str(e)}"
                 )
@@ -573,7 +573,7 @@ class LogProcessorCog(commands.Cog):
         server_configs = await self._get_server_configs()
 
         # Create status embed
-        embed = EmbedBuilder.create_base_embed(
+        embed = await EmbedBuilder.create_base_embed(
             title="Log Processor Status",
             description="Current status of the log processor"
         )

@@ -19,9 +19,15 @@ try:
     import discord
     from discord.commands import Option, OptionChoice, SlashCommandGroup
     from discord.ext.commands import Bot, Cog
+    
+    # Define SlashCommandOptionType for use in app_command_option_type
+    from discord.enums import SlashCommandOptionType
 except ImportError:
     logger.error("Failed to import py-cord library")
     discord = None
+    SlashCommandOptionType = None
+    OptionChoice = None
+    Option = None
 
 # Verify we're using py-cord and log library information
 if discord is not None:
@@ -51,10 +57,10 @@ class AppCommandOptionType:
     
     def __init__(self):
         # If py-cord is available, load all values from SlashCommandOptionType
-        if USING_PYCORD and hasattr(discord, 'enums') and hasattr(discord.enums, 'SlashCommandOptionType'):
-            for attr_name in dir(discord.enums.SlashCommandOptionType):
+        if USING_PYCORD and SlashCommandOptionType is not None:
+            for attr_name in dir(SlashCommandOptionType):
                 if not attr_name.startswith('_'):  # Skip private/dunder methods
-                    setattr(self, attr_name, getattr(discord.enums.SlashCommandOptionType, attr_name))
+                    setattr(self, attr_name, getattr(SlashCommandOptionType, attr_name))
             logger.info("Initialized AppCommandOptionType with SlashCommandOptionType values")
 
 # Create AppCommandOptionType instance and also export it to discord.enums for direct imports
@@ -74,7 +80,7 @@ class AppCommandsCompatLayer:
         self.logger = logger
         
         # Set up Choice for autocomplete 
-        if USING_PYCORD:
+        if USING_PYCORD and OptionChoice is not None:
             self.Choice = OptionChoice  # Use py-cord's OptionChoice
         else:
             # Create a mock Choice class if needed (fallback)
@@ -116,36 +122,36 @@ class AppCommandsCompatLayer:
         if 'server_id' in kwargs:
             callback = kwargs.get('server_id')
             
-            def decorator(func):
+            def inner_decorator(func):
                 if not hasattr(func, "_param_autocomplete"):
                     func._param_autocomplete = {}
                 func._param_autocomplete["server_id"] = callback
                 return func
-            return decorator
+            return inner_decorator
         
         # Handle callback= style (our compatibility layer)
         if 'callback' in kwargs:
             callback = kwargs.get('callback')
             
-            def decorator(func):
+            def inner_decorator(func):
                 if not hasattr(func, "_param_autocomplete"):
                     func._param_autocomplete = {}
                 func._param_autocomplete[param_name] = callback
                 return func
-            return decorator
+            return inner_decorator
         
         # Handle discord.py style (@app_commands.autocomplete("name"))
-        def decorator(callback_func):
+        def outer_decorator(callback_func):
             # Associate the autocomplete callback with the parameter
             if not hasattr(callback_func, "_param_autocomplete"):
                 callback_func._param_autocomplete = {}
             callback_func._param_autocomplete[param_name] = True
             return callback_func
-        return decorator
+        return outer_decorator
     
     def guild_only(self):
         """Maps to py-cord's guild_only decorator"""
-        if USING_PYCORD and hasattr(discord.commands, 'guild_only'):
+        if USING_PYCORD and hasattr(discord, 'commands') and hasattr(discord.commands, 'guild_only'):
             return discord.commands.guild_only()
         
         # Fallback decorator 
@@ -169,7 +175,7 @@ class CommandTreeCompat:
         return []
 
 # Set up key compatibility components for py-cord
-if USING_PYCORD:
+if USING_PYCORD and discord is not None:
     # 1. Add app_commands compatibility if not present
     if not hasattr(discord, 'app_commands'):
         app_commands_compat = AppCommandsCompatLayer()
@@ -177,7 +183,7 @@ if USING_PYCORD:
         logger.info("Added app_commands compatibility layer for py-cord")
     
     # 2. Patch Bot class to include tree attribute if needed
-    if hasattr(discord.ext, 'commands') and hasattr(discord.ext.commands, 'Bot'):
+    if hasattr(discord, 'ext') and hasattr(discord.ext, 'commands') and hasattr(discord.ext.commands, 'Bot'):
         original_bot_init = discord.ext.commands.Bot.__init__
         
         def patched_bot_init(self, *args, **kwargs):
@@ -189,7 +195,7 @@ if USING_PYCORD:
         logger.info("Patched Bot class to add tree support")
     
     # 3. Add hybrid_group compatibility
-    if hasattr(discord.ext, 'commands') and not hasattr(discord.ext.commands, 'hybrid_group'):
+    if hasattr(discord, 'ext') and hasattr(discord.ext, 'commands') and not hasattr(discord.ext.commands, 'hybrid_group'):
         def hybrid_group(name=None, **kwargs):
             """Create a hybrid command group compatible with both slash and prefix commands"""
             # For py-cord we need to combine slash_command and group
@@ -200,13 +206,13 @@ if USING_PYCORD:
                 description=kwargs.get('description', 'No description')
             ) if hasattr(discord.commands, 'slash_command') else None
             
-            def decorator(func):
+            def hybrid_decorator(func):
                 # Apply both decorators
                 result = group_decorator(func)
                 if slash_decorator and not kwargs.get('invoke_without_command', False):
                     result = slash_decorator(result)
                 return result
-            return decorator
+            return hybrid_decorator
         
         # Add hybrid_group to discord.ext.commands
         discord.ext.commands.hybrid_group = hybrid_group
@@ -218,16 +224,21 @@ def create_option(name: str,
                  required: bool = False, 
                  choices: Optional[List[Dict[str, Any]]] = None) -> Any:
     """Create a command option compatible with py-cord"""
-    if USING_PYCORD:
+    if USING_PYCORD and discord is not None and Option is not None and OptionChoice is not None:
         try:
             # Format choices for py-cord if provided as dictionaries
             formatted_choices = None
             if choices:
-                formatted_choices = [
-                    OptionChoice(name=choice.get('name', ''), value=choice.get('value', ''))
-                    if isinstance(choice, dict) else choice
-                    for choice in choices
-                ]
+                formatted_choices = []
+                for choice in choices:
+                    if isinstance(choice, dict):
+                        choice_obj = OptionChoice(
+                            name=choice.get('name', ''), 
+                            value=choice.get('value', '')
+                        )
+                        formatted_choices.append(choice_obj)
+                    else:
+                        formatted_choices.append(choice)
             
             # Create a py-cord Option
             return Option(

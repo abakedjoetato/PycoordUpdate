@@ -175,16 +175,36 @@ def safe_standardize_server_id(server_id: Union[str, int, None]) -> str:
         server_id: Server ID in any format (string, int, None)
         
     Returns:
-        Standardized string server ID, or original input as string if standardization fails
+        Standardized string server ID, or empty string if standardization fails
         Never returns None
     """
-    # Convert input to a string safely
-    original_input = str(server_id) if server_id is not None else ""
-    
-    # Apply basic standardization (similar to standardize_server_id but simpler)
-    result = original_input.strip() if original_input else ""
+    # Handle None explicitly
+    if server_id is None:
+        return ""
         
-    return result
+    try:
+        # Convert input to a string safely
+        if isinstance(server_id, (int, float)):
+            # Make sure we don't lose precision on large numbers
+            original_input = str(int(server_id))
+        elif hasattr(server_id, '__str__'):
+            # Convert to string
+            original_input = str(server_id)
+        else:
+            # Fallback for unusual types
+            original_input = ""
+        
+        # Apply basic standardization (similar to standardize_server_id but simpler)
+        result = original_input.strip() if original_input else ""
+        
+        # Handle special cases like 'None', 'null', etc.
+        if result.lower() in ('none', 'null', 'undefined', 'nan'):
+            return ""
+            
+        return result
+    except Exception:
+        # If anything goes wrong, return empty string
+        return ""
 
 def validate_server_id_format(server_id: Union[str, int, None]) -> bool:
     """Validate that a server ID has the correct format.
