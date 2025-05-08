@@ -530,29 +530,23 @@ def create_option(name: str,
 
 def get_app_commands_module():
     """
-    Get the appropriate app_commands module for the current environment
+    Get the Discord app_commands module
     
-    For py-cord, this returns our compatibility layer or creates one if needed.
-    This function is useful for dynamically retrieving the app_commands module
-    in places where direct imports might fail.
+    For py-cord 2.6.1, this directly returns discord.app_commands as required by Rule #2
+    in rules.md which specifies we should use the latest technologies without compatibility
+    layers.
     
     Returns:
-        AppCommandsCompatLayer or None: The app_commands module to use
+        discord.app_commands: The direct app_commands module
     """
     if discord is None:
         logger.error("Discord module not available for app_commands")
         return None
     
-    # Check if app_commands already exists
-    app_commands = getattr(discord, 'app_commands', None)
-    
-    # If not, create it (this shouldn't normally happen as it's created in the initialization)
-    if app_commands is None and USING_PYCORD:
-        try:
-            app_commands = AppCommandsCompatLayer()
-            setattr(discord, 'app_commands', app_commands)
-            logger.info("Created new app_commands compatibility layer on demand")
-        except Exception as e:
-            logger.error(f"Failed to create app_commands on demand: {e}")
-    
-    return app_commands
+    # Direct import from discord module
+    try:
+        import discord.app_commands
+        return discord.app_commands
+    except ImportError as e:
+        logger.error(f"Failed to import discord.app_commands directly: {e}")
+        return None

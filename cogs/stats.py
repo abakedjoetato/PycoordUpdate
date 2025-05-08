@@ -5,11 +5,7 @@ import logging
 import asyncio
 import discord
 from discord.ext import commands
-# Ensure discord_compat is imported for py-cord compatibility
-from utils.discord_compat import get_app_commands_module
-app_commands = get_app_commands_module()
-import discord
-# Use app_commands via discord.app_commands for py-cord compatibility
+from discord import app_commands
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 
@@ -739,7 +735,7 @@ class Stats(commands.Cog):
 
     @stats.command(name="server", description="View server statistics")
     @app_commands.describe(server_id="Select a server by name to check stats for")
-    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
+    @app_commands.autocomplete(server_id=server_id_autocomplete)
     @premium_tier_required(1)  # Stats require premium tier 1+
     async def server_stats(self, ctx, server_id: str):
         """View statistics for a server"""
@@ -843,7 +839,7 @@ class Stats(commands.Cog):
         stat="The statistic to rank by",
         limit="Number of players to show (max 25)"
     )
-    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
+    @app_commands.autocomplete(server_id=server_id_autocomplete)
     @premium_tier_required(1)  # Requires Tier 1+ (Survivor)
     @app_commands.choices(stat=[
         app_commands.Choice(name="Kills", value="kills"),
@@ -969,7 +965,7 @@ class Stats(commands.Cog):
     @app_commands.describe(
         server_id="Select a server by name to check stats for"
     )
-    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
+    @app_commands.autocomplete(server_id=server_id_autocomplete)
     @premium_tier_required(1)  # Stats require premium tier 1+
     async def weapon_categories(self, ctx, server_id: str):
         """View statistics by weapon category"""

@@ -4,11 +4,7 @@ Premium features and management commands
 import logging
 import discord
 from discord.ext import commands
-# Ensure discord_compat is imported for py-cord compatibility
-from utils.discord_compat import get_app_commands_module
-app_commands = get_app_commands_module()
-import discord
-# Use app_commands via discord.app_commands for py-cord compatibility
+from discord import app_commands
 from typing import List, Optional
 
 from models.guild import Guild

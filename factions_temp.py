@@ -14,8 +14,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union, Literal
 
 import discord
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
 from discord.ext import commands
-from discord import app_commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
 
 from models.faction import Faction, FACTION_ROLES
 from utils.embed_builder import EmbedBuilder

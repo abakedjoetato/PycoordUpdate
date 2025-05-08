@@ -2,7 +2,7 @@ modules = ["python-3.11"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["glibcLocales", "openssl", "postgresql", "proj"]
+packages = ["cacert", "freetype", "glibcLocales", "lcms2", "libimagequant", "libjpeg", "libsodium", "libtiff", "libwebp", "libxcrypt", "nettle", "openjpeg", "openssh", "openssl", "postgresql", "proj", "tcl", "tk", "zlib"]
 
 [deployment]
 deploymentTarget = "autoscale"

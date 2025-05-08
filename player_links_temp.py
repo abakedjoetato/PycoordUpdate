@@ -11,8 +11,12 @@ import logging
 import asyncio
 from datetime import datetime
 import discord
+import discord
+# Use app_commands via discord.app_commands for py-cord compatibility
 from discord.ext import commands
-from discord import app_commands
+# Ensure discord_compat is imported for py-cord compatibility
+from utils.discord_compat import get_app_commands_module
+app_commands = get_app_commands_module()
 from typing import Optional, Dict, List, Any
 
 from models.player import Player

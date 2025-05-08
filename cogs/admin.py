@@ -6,9 +6,8 @@ import logging
 import asyncio
 import discord
 from discord.ext import commands
+from discord import app_commands
 from typing import Optional, cast, Dict, Any, List, TypeVar, Union, Protocol
-
-# No need for discord_compat anymore as we're using py-cord 2.6.1 directly
 
 from models.guild import Guild
 from utils.embed_builder import EmbedBuilder
@@ -32,7 +31,7 @@ class Admin(commands.Cog):
             await ctx.send("Please specify a subcommand.")
 
     @admin.command(name="setrole", description="Set the admin role for server management")
-    @discord.app_commands.describe(role="The role to set as admin")
+    @app_commands.describe(role="The role to set as admin")
     async def setrole(self, ctx, role: discord.Role):
         """Set the admin role for server management"""
         try:
