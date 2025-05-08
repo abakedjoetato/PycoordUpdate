@@ -84,7 +84,7 @@ def run_with_db_fallback(default_value: T = None) -> Callable[[Callable[..., Cor
         return wrapper
     return decorator
 
-def standardize_server_id(server_id: Union[str, int, None]) -> Optional[str]:
+def safe_standardize_server_id(server_id: Union[str, int, None]) -> Optional[str]:
     """Standardize server ID format to ensure consistent handling.
     
     Args:
@@ -180,7 +180,7 @@ def safe_standardize_server_id(server_id: Union[str, int, None]) -> str:
     """
     # First try standard standardization
     original_input = str(server_id) if server_id is not None else ""
-    result = standardize_server_id(original_input)
+    result = safe_standardize_server_id(original_input)
     
     # If standardization failed and returned None, use original input
     if result is None:
@@ -201,7 +201,7 @@ def validate_server_id_format(server_id: Union[str, int, None]) -> bool:
         return False
         
     # Convert to string
-    str_id = standardize_server_id(server_id)
+    str_id = safe_standardize_server_id(server_id)
     if str_id is None:
         return False
         
@@ -237,12 +237,12 @@ async def get_server(db, server_id: Union[str, int, None], guild_id: Union[str, 
     Returns:
         Optional[Dict]: Server data if found, None otherwise
     """
-    # Standardize IDs for consistent handling
-    str_server_id = standardize_server_id(server_id)
-    str_guild_id = standardize_server_id(guild_id)
+    # Standardize IDs for consistent handling - using safe version that never returns None
+    str_server_id = safe_standardize_server_id(server_id)
+    str_guild_id = safe_standardize_server_id(guild_id)
     
-    # Validate inputs
-    if str_server_id is None or not str_guild_id:
+    # Validate inputs - now just checking for empty strings since safe_standardize_server_id never returns None
+    if not str_server_id or not str_guild_id:
         logger.warning(f"Invalid input to get_server: server_id={server_id}, guild_id={guild_id}")
         return None
         
@@ -276,7 +276,7 @@ async def get_server(db, server_id: Union[str, int, None], guild_id: Union[str, 
                 continue
                 
             # Get server_id with standardization
-            server_id_value = standardize_server_id(str(server.get("server_id")) if server.get("server_id") is not None else "")
+            server_id_value = safe_standardize_server_id(str(server.get("server_id")) if server.get("server_id") is not None else "")
             if server_id_value is None:
                 continue
                 
@@ -317,7 +317,7 @@ async def list_guild_servers(db, guild_id: Union[str, int]) -> List[Dict[str, An
         List of server data dictionaries
     """
     # Ensure consistent string type for guild_id
-    str_guild_id = standardize_server_id(guild_id)
+    str_guild_id = safe_standardize_server_id(guild_id)
     
     # If no valid guild_id is provided, return empty list for safety
     if str_guild_id is None:
@@ -364,8 +364,8 @@ async def enforce_guild_isolation(db, server_id: Union[str, int, None], guild_id
         GuildIsolationError: If server exists but belongs to a different guild
     """
     # Standardize IDs with improved type handling
-    str_server_id = standardize_server_id(server_id)
-    str_guild_id = standardize_server_id(guild_id)
+    str_server_id = safe_standardize_server_id(server_id)
+    str_guild_id = safe_standardize_server_id(guild_id)
     
     # Validate input parameters
     if str_server_id is None:
@@ -439,7 +439,7 @@ async def find_server_in_all_guilds(db, server_id: Union[str, int, None]) -> Lis
         List of guild data dictionaries where server was found
     """
     # Standardize server ID with enhanced type handling
-    str_server_id = standardize_server_id(server_id)
+    str_server_id = safe_standardize_server_id(server_id)
     
     # Validate inputs
     if str_server_id is None:
@@ -512,7 +512,7 @@ async def find_server_in_all_guilds(db, server_id: Union[str, int, None]) -> Lis
             # Manually search for matching servers
             for guild in all_guilds:
                 for server in guild.get("servers", []):
-                    if standardize_server_id(str(server.get("server_id")) if server.get("server_id") is not None else "") == str_server_id:
+                    if safe_standardize_server_id(str(server.get("server_id")) if server.get("server_id") is not None else "") == str_server_id:
                         results.append({
                             "guild_id": str(guild.get("guild_id", "unknown")),
                             "guild_name": guild.get("name", "Unknown Guild"),
@@ -554,8 +554,8 @@ async def get_server_safely(db, server_id: Union[str, int, None], guild_id: Unio
         Optional[Dict]: Server data if found, None otherwise
     """
     # Standardize IDs with robust handling
-    str_server_id = standardize_server_id(server_id)
-    str_guild_id = standardize_server_id(guild_id)
+    str_server_id = safe_standardize_server_id(server_id)
+    str_guild_id = safe_standardize_server_id(guild_id)
     
     # Validate input parameters
     if str_server_id is None:
@@ -641,7 +641,7 @@ async def check_server_existence(
         bool: True if server is not None exists, False otherwise
     """
     # Normalize server ID
-    str_server_id = standardize_server_id(server_id)
+    str_server_id = safe_standardize_server_id(server_id)
     if str_server_id is None:
         logger.warning("Empty server ID provided for validation")
         return False
@@ -663,7 +663,7 @@ async def check_server_existence(
     else:
         # Pattern 2: (db, server_id, guild_id)
         db = guild_or_db
-        str_guild_id = standardize_server_id(guild_id_or_db)
+        str_guild_id = safe_standardize_server_id(guild_id_or_db)
         guild = None  # No guild object in this pattern
         
         if str_guild_id is None:
@@ -726,7 +726,7 @@ def legacy_standardize_server_id(server_id: Union[str, int, None]) -> str:
     Returns:
         Standardized string server ID
     """
-    return standardize_server_id(server_id) or ""
+    return safe_standardize_server_id(server_id) or ""
 
 # Alias for backward compatibility
 check_server_exists = check_server_existence
@@ -793,7 +793,7 @@ async def validate_server(guild_model, server_id: Union[str, int, None]) -> Tupl
         return False, "Could not find guild configuration. Please run /setup first."
         
     # Normalize server ID with our enhanced standardization
-    str_server_id = standardize_server_id(server_id)
+    str_server_id = safe_standardize_server_id(server_id)
     
     # Validate the server ID
     if str_server_id is None:
@@ -891,9 +891,9 @@ async def validate_server_access(db, server_id: Union[str, int, None], guild_id:
     
     # Standardize IDs with enhanced type handling and better error catching
     try:
-        str_server_id = standardize_server_id(server_id)
-        str_guild_id = standardize_server_id(guild_id)
-        str_user_id = standardize_server_id(user_id) if user_id is not None else None
+        str_server_id = safe_standardize_server_id(server_id)
+        str_guild_id = safe_standardize_server_id(guild_id)
+        str_user_id = safe_standardize_server_id(user_id) if user_id is not None else None
     except Exception as e:
         logger.error(f"Error standardizing IDs in validate_server_access: {e}")
         return False, "Invalid ID format provided"
@@ -1047,7 +1047,7 @@ async def validate_server_access(db, server_id: Union[str, int, None], guild_id:
                         admin_users = []
                         
                     # Standardize admin user IDs for comparison
-                    standardized_admin_uids = [standardize_server_id(uid) for uid in admin_users if uid is not None]
+                    standardized_admin_uids = [safe_standardize_server_id(uid) for uid in admin_users if uid is not None]
                     
                     if str_user_id in standardized_admin_uids:
                         logger.debug(f"Admin access granted for user {str_user_id} to server {str_server_id}")
@@ -1068,7 +1068,7 @@ async def validate_server_access(db, server_id: Union[str, int, None], guild_id:
                             allowed_users = []
                             
                         # Standardize allowed user IDs for comparison
-                        standardized_allowed_uids = [standardize_server_id(uid) for uid in allowed_users if uid is not None]
+                        standardized_allowed_uids = [safe_standardize_server_id(uid) for uid in allowed_users if uid is not None]
                         
                         if str_user_id in standardized_allowed_uids:
                             logger.debug(f"User {str_user_id} has explicit access to server {str_server_id}")
@@ -1157,7 +1157,7 @@ async def check_server_limits(db, guild_id: Union[str, int, None]) -> Tuple[bool
         Tuple of (has_space, current_count, max_allowed)
     """
     # Standardize guild ID with enhanced type handling
-    str_guild_id = standardize_server_id(guild_id)
+    str_guild_id = safe_standardize_server_id(guild_id)
     
     # Validate input parameters
     if str_guild_id is None:
@@ -1206,7 +1206,7 @@ async def check_server_limits(db, guild_id: Union[str, int, None]) -> Tuple[bool
                 continue
                 
             # Add type-standardized server ID for consistency
-            server["server_id"] = standardize_server_id(server_id)
+            server["server_id"] = safe_standardize_server_id(server_id)
             if server["server_id"]:
                 valid_servers.append(server)
                 

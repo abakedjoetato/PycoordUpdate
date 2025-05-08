@@ -121,7 +121,7 @@ class CSVProcessorCog(commands.Cog):
         server_configs = {}
 
         # Import standardization function
-        from utils.server_utils import standardize_server_id
+        from utils.server_utils import safe_standardize_server_id
 
         # Find all servers with SFTP configuration in the database
         try:
@@ -144,7 +144,7 @@ class CSVProcessorCog(commands.Cog):
             count = 0
             async for server in servers_cursor:
                 raw_server_id = server.get("server_id")
-                server_id = standardize_server_id(str(raw_server_id) if raw_server_id is not None else "")
+                server_id = safe_standardize_server_id(raw_server_id)
 
                 if not server_id:
                     logger.warning(f"Invalid server ID format in servers collection: {raw_server_id}, skipping")
@@ -170,7 +170,7 @@ class CSVProcessorCog(commands.Cog):
             game_count = 0
             async for server in game_servers_cursor:
                 raw_server_id = server.get("server_id")
-                server_id = standardize_server_id(str(raw_server_id) if raw_server_id is not None else "")
+                server_id = safe_standardize_server_id(raw_server_id)
 
                 if not server_id:
                     logger.warning(f"Invalid server ID format in game_servers collection: {raw_server_id}, skipping")
@@ -208,7 +208,7 @@ class CSVProcessorCog(commands.Cog):
                         continue
 
                     raw_server_id = server.get("server_id")
-                    server_id = standardize_server_id(str(raw_server_id) if raw_server_id is not None else "")
+                    server_id = safe_standardize_server_id(raw_server_id)
 
                     if not server_id:
                         continue
@@ -987,7 +987,7 @@ class CSVProcessorCog(commands.Cog):
         await interaction.response.defer(ephemeral=True)
 
         # Import standardization function
-        from utils.server_utils import standardize_server_id
+        from utils.server_utils import safe_standardize_server_id
 
         # Get server ID from guild config if not provided
         if not server_id:
@@ -997,7 +997,7 @@ class CSVProcessorCog(commands.Cog):
                 guild_doc = await self.bot.db.guilds.find_one({"guild_id": guild_id})
                 if guild_doc and "default_server_id" in guild_doc:
                     raw_server_id = guild_doc.get("default_server_id", "")
-                    server_id = standardize_server_id(str(raw_server_id))
+                    server_id = safe_standardize_server_id(raw_server_id)
                     logger.info(f"Using default server ID from guild config: {raw_server_id} (standardized to {server_id})")
                 else:
                     # No default server configured
@@ -1018,7 +1018,7 @@ class CSVProcessorCog(commands.Cog):
         else:
             # Standardize the provided server ID
             raw_server_id = server_id
-            server_id = standardize_server_id(str(server_id) if server_id is not None else "")
+            server_id = safe_standardize_server_id(server_id)
             logger.info(f"Standardized provided server ID from {raw_server_id} to {server_id}")
 
         # Get server config
@@ -1130,7 +1130,7 @@ class CSVProcessorCog(commands.Cog):
         await interaction.response.defer(ephemeral=True)
 
         # Import standardization function
-        from utils.server_utils import standardize_server_id
+        from utils.server_utils import safe_standardize_server_id
 
         # Get server ID from guild config if not provided
         if not server_id:
@@ -1139,7 +1139,7 @@ class CSVProcessorCog(commands.Cog):
                 guild_doc = await self.bot.db.guilds.find_one({"guild_id": guild_id})
                 if guild_doc and "default_server_id" in guild_doc:
                     raw_server_id = guild_doc.get("default_server_id", "")
-                    server_id = standardize_server_id(str(raw_server_id))
+                    server_id = safe_standardize_server_id(raw_server_id)
                     logger.info(f"Using default server ID from guild config: {raw_server_id} (standardized to {server_id})")
                 else:
                     embed = EmbedBuilder.error(
@@ -1159,7 +1159,7 @@ class CSVProcessorCog(commands.Cog):
         else:
             # Standardize the provided server ID
             raw_server_id = server_id
-            server_id = standardize_server_id(str(server_id) if server_id is not None else "")
+            server_id = safe_standardize_server_id(server_id)
             logger.info(f"Standardized provided server ID from {raw_server_id} to {server_id}")
 
         # Get server config
