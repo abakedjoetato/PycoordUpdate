@@ -14,10 +14,12 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union, Tuple
 
 import discord
-from utils.discord_compat import get_app_commands_module
-# Use compatibility layer to handle different Discord library versions
-app_commands = get_app_commands_module()
 from discord.ext import commands, tasks
+# Use compatibility layer to handle different Discord library versions
+from utils.discord_compat import get_app_commands_module, AppCommandOptionType
+
+# Get the appropriate app_commands module for the current Discord library
+app_commands = get_app_commands_module()
 
 from utils.csv_parser import CSVParser
 from utils.sftp import SFTPManager

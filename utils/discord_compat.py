@@ -49,48 +49,54 @@ if USING_PYCORD:
     try:
         # For py-cord
         from discord.commands import Option, OptionChoice
-        # Import py-cord specific types
+        
+        # Attempt to import CommandOptionType, but don't raise an error if not found
+        CommandOptionType = None
         try:
-            # Try to import CommandOptionType if available
-            try:
+            # Check if discord.enums exists and has CommandOptionType
+            if hasattr(discord, 'enums') and hasattr(discord.enums, 'CommandOptionType'):
                 from discord.enums import CommandOptionType
                 # Override our AppCommandOptionType with the actual one
                 AppCommandOptionType = CommandOptionType
-            except ImportError:
-                logger.warning("Could not import CommandOptionType from py-cord, using fallback")
-                
-            # Add additional py-cord specific imports here
-        except Exception as e:
-            logger.warning(f"Error during py-cord imports: {e}")
+                logger.info("Successfully imported CommandOptionType from discord.enums")
+            else:
+                logger.warning("discord.enums.CommandOptionType not available, using fallback")
+        except (ImportError, AttributeError):
+            logger.warning("Could not import CommandOptionType from py-cord, using fallback")
     except ImportError as e:
         logger.error(f"Error importing py-cord components: {e}")
+
+# Define a mock app_commands module
+class MockAppCommands:
+    """Mock app_commands module for compatibility"""
+    def __init__(self):
+        self.logger = logger
+    
+    def command(self, name=None, description=None):
+        def decorator(func):
+            return func
+        return decorator
+    
+    def describe(self, **kwargs):
+        def decorator(func):
+            return func
+        return decorator
+    
+    def autocomplete(self, callback=None):
+        def decorator(func):
+            return func
+        return decorator
 
 # Set up compatibility layers in discord if needed
 if USING_DISCORDPY and discord is not None:
     try:
         # For discord.py, add our compatibility type to the discord module
         if not hasattr(discord, 'app_commands'):
-            # Create a mock app_commands module as a class with expected methods
-            class MockAppCommands:
-                """Mock app_commands module for compatibility"""
-                def command(self, name=None, description=None):
-                    def decorator(func):
-                        return func
-                    return decorator
-                
-                def describe(self, **kwargs):
-                    def decorator(func):
-                        return func
-                    return decorator
-                
-                def autocomplete(self, callback=None):
-                    def decorator(func):
-                        return func
-                    return decorator
-            
-            # Add to discord module
-            discord.app_commands = MockAppCommands()
-            logger.info("Added compatibility app_commands to discord")
+            # Create and add our mock app_commands
+            mock_app_commands = MockAppCommands()
+            # Use setattr to avoid direct attribute assignment that might be flagged by LSP
+            setattr(discord, 'app_commands', mock_app_commands)
+            logger.info("Added compatibility app_commands to discord module")
     except Exception as e:
         logger.error(f"Error setting up discord.py compatibility: {e}")
 
