@@ -13,8 +13,12 @@ import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union, Tuple, cast, TypeVar, Protocol, TYPE_CHECKING, Coroutine
 
-# Import and define types
+# Import discord modules
+import discord
 from discord.ext.commands import Bot
+from discord.ext import commands, tasks
+from discord.commands import Option, OptionChoice, SlashCommandGroup
+from discord.enums import SlashCommandOptionType
 
 # Type definition for bot with db property
 class MotorDatabase(Protocol):
@@ -22,6 +26,16 @@ class MotorDatabase(Protocol):
     def __getattr__(self, name: str) -> Any: ...
     async def find_one(self, query: Dict[str, Any]) -> Optional[Dict[str, Any]]: ...
     async def find(self, query: Dict[str, Any]) -> Any: ...
+    @property
+    def servers(self) -> Any: ...
+    @property
+    def game_servers(self) -> Any: ...
+    @property
+    def guilds(self) -> Any: ...
+    @property
+    def players(self) -> Any: ...
+    @property
+    def kills(self) -> Any: ...
     
 class PvPBot(Protocol):
     """Protocol defining the PvPBot interface with required properties"""
@@ -29,14 +43,9 @@ class PvPBot(Protocol):
     def db(self) -> Optional[MotorDatabase]: ...
     def wait_until_ready(self) -> Coroutine[Any, Any, None]: ...
     @property
-    def user(self) -> Optional[discord.User]: ...
+    def user(self) -> Optional[Union[discord.User, discord.ClientUser]]: ...
         
 T = TypeVar('T')
-
-import discord
-from discord.ext import commands, tasks
-from discord.commands import Option, OptionChoice, SlashCommandGroup
-from discord.enums import SlashCommandOptionType
 
 # Import utils 
 from utils.csv_parser import CSVParser
@@ -1418,6 +1427,12 @@ class CSVProcessorCog(commands.Cog):
 
         return player
 
-async def setup(bot: commands.Bot) -> None:
-    """Set up the CSV processor cog"""
-    await bot.add_cog(CSVProcessorCog(bot))
+async def setup(bot: Any) -> None:
+    """Set up the CSV processor cog
+    
+    Args:
+        bot: Discord bot instance with db property
+    """
+    # Cast the bot to our PvPBot protocol to satisfy type checking
+    pvp_bot = cast('PvPBot', bot)
+    await bot.add_cog(CSVProcessorCog(pvp_bot))
