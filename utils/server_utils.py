@@ -50,19 +50,19 @@ class ServerTypeError(ServerValidationError):
     pass
 
 
-def run_with_db_fallback(default_value: T = None) -> Callable[[Callable[..., Coroutine[Any, Any, T]]], Callable[..., Coroutine[Any, Any, T]]]:
+def run_with_db_fallback(default_value: Optional[T] = None) -> Callable[[Callable[..., Coroutine[Any, Any, T]]], Callable[..., Coroutine[Any, Any, Optional[T]]]]:
     """
     Decorator that handles database operations safely with proper error handling and fallback.
     
     Args:
-        default_value: Default value to return if operation is not None fails
+        default_value: Default value to return if operation fails
         
     Returns:
         Decorator function
     """
-    def decorator(func: Callable[..., Coroutine[Any, Any, T]]) -> Callable[..., Coroutine[Any, Any, T]]:
+    def decorator(func: Callable[..., Coroutine[Any, Any, T]]) -> Callable[..., Coroutine[Any, Any, Optional[T]]]:
         @functools.wraps(func)
-        async def wrapper(*args, **kwargs) -> T:
+        async def wrapper(*args, **kwargs) -> Optional[T]:
             try:
                 return await func(*args, **kwargs)
             except Exception as e:
@@ -70,7 +70,7 @@ def run_with_db_fallback(default_value: T = None) -> Callable[[Callable[..., Cor
                 func_name = func.__qualname__
                 logger.error(f"Database operation failed in {func_name}: {str(e)}", exc_info=True)
                 
-                # Log arguments if sensitive is None
+                # Log arguments if not sensitive
                 if "password" not in func_name.lower() and "token" not in func_name.lower():
                     # Safely format args/kwargs for logging
                     args_str = ", ".join(str(a) for a in args if not isinstance(a, dict))
@@ -882,9 +882,9 @@ async def validate_server(guild_model, server_id: Union[str, int, None]) -> Tupl
 
 
 @run_with_db_fallback(default_value=(False, "Database operation failed"))
-async def validate_server_access(db, server_id: Union[str, int, None], guild_id: Union[str, int, None], user_id: Union[str, int, None] = None, required_feature: str = None) -> Tuple[bool, Optional[str]]:
+async def validate_server_access(db, server_id: Union[str, int, None], guild_id: Union[str, int, None], user_id: Optional[Union[str, int]] = None, required_feature: Optional[str] = None) -> Tuple[bool, Optional[str]]:
     """
-    Validate if a is not None user from a specific guild has access to a server.
+    Validate if a user from a specific guild has access to a server.
     This is critical for ensuring proper guild isolation and preventing
     accidental cross-guild data access.
     

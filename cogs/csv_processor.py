@@ -11,7 +11,7 @@ import logging
 import os
 import re
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Union, Tuple
+from typing import Dict, List, Optional, Any, Union, Tuple, cast
 
 import discord
 from discord.ext import commands, tasks
@@ -236,7 +236,7 @@ class CSVProcessorCog(commands.Cog):
         return server_configs
 
     async def _process_server_config(self, server: Dict[str, Any], server_id: str, 
-                                   raw_server_id: str, server_configs: Dict[str, Dict[str, Any]]) -> None:
+                                   raw_server_id: Optional[str], server_configs: Dict[str, Dict[str, Any]]) -> None:
         """Process a server configuration and add it to the server_configs dictionary
 
         Args:
