@@ -2,7 +2,7 @@
 Tower of Temptation PvP Statistics Discord Bot
 Main bot initialization and configuration
 
-This implementation uses py-cord (discord.py fork) as the Discord API library.
+This implementation uses py-cord 2.6.1 as the Discord API library.
 """
 import os
 import sys
@@ -12,8 +12,11 @@ from typing import Dict, List, Optional, Any, Union, TypeVar, Callable, Tuple, C
 
 import discord
 from discord.ext import commands
+# Import the Bot class directly from discord.ext.commands for py-cord 2.6.1
+from discord.ext.commands import Bot
 from discord import app_commands
 from discord.app_commands import Choice
+from discord.enums import AppCommandOptionType
 
 # Import AppCommandOptionType directly from py-cord 2.6.1
 from discord.enums import AppCommandOptionType
@@ -72,7 +75,7 @@ async def initialize_bot(force_sync=False):
     # Create bot instance with hardcoded owner ID
     # Using proper py-cord Bot initialization with type hints
     
-    class PvPBot(commands.Bot):
+    class PvPBot(Bot):
         """Custom Bot class with additional attributes for our application"""
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
