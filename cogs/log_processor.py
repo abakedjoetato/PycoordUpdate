@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 class LogProcessorCog(commands.Cog):
     """Commands and background tasks for processing game log files"""
 
-    async def server_id_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice(name=str]]:
+    async def server_id_autocomplete(self, interaction: discord.Interaction, current: str) -> List[discord.commands.OptionChoice]:
         """Autocomplete for server selection by name, returns server_id as value
 
         Args:
@@ -44,7 +44,7 @@ class LogProcessorCog(commands.Cog):
             current: Current input value
 
         Returns:
-            List[app_commands.Choice]: List of server choices
+            List[discord.commands.OptionChoice]: List of server choices
         """
         return await server_id_autocomplete(interaction, current)
 
@@ -62,12 +62,17 @@ class LogProcessorCog(commands.Cog):
         self.is_processing = False
         self.last_processed = {}  # Track last processed timestamp per server
 
+        # Create task loop
+        self.process_logs_task = tasks.loop(minutes=1.0)(self.process_logs_task)
+        # Before loop hook
+        self.process_logs_task.before_loop(self.before_process_logs_task)
         # Start background task
         self.process_logs_task.start()
 
     def cog_unload(self):
         """Stop background tasks and close connections when cog is unloaded"""
-        self.process_logs_task.cancel()
+        if hasattr(self.process_logs_task, 'cancel'):
+            self.process_logs_task.cancel()
 
         # Close all SFTP connections
         for server_id, sftp_manager in self.sftp_managers.items():

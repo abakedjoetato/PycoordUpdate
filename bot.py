@@ -65,7 +65,10 @@ async def initialize_bot(force_sync=False):
         command_prefix='!', 
         intents=intents, 
         help_command=None,
-        owner_id=462961235382763520  # Correct hardcoded owner ID (constant truth)
+        owner_id=462961235382763520,  # Correct hardcoded owner ID (constant truth)
+        # Adding these lines for proper py-cord compatibility
+        sync_commands=True,
+        sync_commands_debug=True
     )
     
     # Initialize background tasks dictionary
@@ -143,7 +146,7 @@ async def initialize_bot(force_sync=False):
         
         if force_sync:
             logger.info("Syncing application commands...")
-            await bot.tree.sync()
+            await bot.sync_commands()
             logger.info("Application commands synced!")
     
     @bot.event
