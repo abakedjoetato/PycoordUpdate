@@ -414,8 +414,10 @@ class CSVProcessorCog(commands.Cog):
                 logger.info(f"Using server directory: {server_dir} with ID {path_server_id}")
                 logger.debug(f"Using server directory: {server_dir}")
 
-                # Initialize alternate paths list (to avoid "possibly unbound" warning)
+                # Initialize variables to avoid "possibly unbound" warnings
                 alternate_deathlogs_paths = []
+                csv_files = []
+                path_found = None
 
                 # Build CSV file paths
                 if sftp_path and sftp_path.startswith("/"):

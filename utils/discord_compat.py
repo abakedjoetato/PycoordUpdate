@@ -53,9 +53,15 @@ if USING_PYCORD:
         # Attempt to import CommandOptionType, but don't raise an error if not found
         CommandOptionType = None
         try:
-            # Check if discord.enums exists and has CommandOptionType
-            if hasattr(discord, 'enums') and hasattr(discord.enums, 'CommandOptionType'):
-                from discord.enums import CommandOptionType
+            # Check if discord exists and has necessary attributes
+            if discord is not None:
+                # Access enums only if discord is not None
+                if hasattr(discord, 'enums'):
+                    # Get the enums module as a variable first
+                    enums_module = getattr(discord, 'enums')
+                    if hasattr(enums_module, 'CommandOptionType'):
+                        # Now that we've safely accessed it, import it
+                        CommandOptionType = enums_module.CommandOptionType
                 # Override our AppCommandOptionType with the actual one
                 AppCommandOptionType = CommandOptionType
                 logger.info("Successfully imported CommandOptionType from discord.enums")
