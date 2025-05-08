@@ -23,4 +23,3 @@ motor
 werkzeug
 wtforms
 aiohttp>=3.7.4
-py-cord==2.6.1
