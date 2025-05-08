@@ -24,7 +24,7 @@ USING_PYCORD = False
 USING_DISCORDPY = False
 
 if discord is not None:
-    if hasattr(discord, '__title__') and discord.__title__ == 'py-cord':
+    if hasattr(discord, '__title__') and discord.__title__ == 'pycord':
         USING_PYCORD = True
         logger.info("Detected py-cord library")
     else:
