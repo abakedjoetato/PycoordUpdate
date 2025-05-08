@@ -3,12 +3,22 @@
 import discord
 import logging
 import asyncio
-import discord
-# Use app_commands via discord.app_commands for py-cord compatibility
+from typing import Optional, Dict, List, Any, cast, Protocol, TypeVar, Union
+
 from discord.ext import commands
-# Ensure discord_compat is imported for py-cord compatibility
-from utils.discord_compat import get_app_commands_module
-app_commands = get_app_commands_module()
+from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
+
+# Define a protocol for PvPBot to handle database access properly
+T = TypeVar('T')
+class MotorDatabase(Protocol):
+    """Protocol for MongoDB motor database"""
+    @property
+    def guilds(self) -> AsyncIOMotorCollection: ...
+
+class PvPBot(Protocol):
+    """Protocol for PvPBot with database property"""
+    @property
+    def db(self) -> Optional[MotorDatabase]: ...
 
 from utils.embed_builder import EmbedBuilder
 from models.guild import Guild
@@ -19,7 +29,7 @@ class CommandSelect(discord.ui.Select):
     """Dropdown select for command categories"""
 
     def __init__(self, bot, author_id: int, guild_id: int):
-        self.bot = bot
+        self.bot = cast(PvPBot, bot)
         self.author_id = author_id
         self.guild_id = guild_id
 
@@ -45,7 +55,7 @@ class CommandSelect(discord.ui.Select):
 
         # Defer the response to avoid timeout
         try:
-            await interaction.response.defer(ephemeral=False, thinking=False)
+            await interaction.response.defer(ephemeral=False)
         except Exception as e:
             # Continue execution even if defer fails
             logging.warning(f"Error deferring response in CommandSelect callback: {e}")
@@ -78,10 +88,20 @@ class CommandSelect(discord.ui.Select):
             except:
                 pass
 
-    async def create_category_embed(self, category: str, guild_model):
-        """Create help embed for the selected category"""
+    async def create_category_embed(self, category, guild_model) -> discord.Embed:
+        """Create help embed for the selected category
+        
+        Args:
+            category: The selected category from the dropdown
+            guild_model: The guild model for theming
+            
+        Returns:
+            discord.Embed: The embed to display
+        """
+        # Cast to string to ensure proper typing
+        category_str = str(category)
 
-        if category == "Admin":
+        if category_str == "Admin":
             title = "🛡️ Admin Commands"
             description = "Server administration commands"
             fields = [
@@ -228,34 +248,43 @@ class CommandSelect(discord.ui.Select):
 class CommandsView(discord.ui.View):
     """View with select dropdown for command categories"""
 
-    def __init__(self, bot, author_id: int, guild_id: int):
+    def __init__(self, bot, author_id: int, guild_id: Optional[int]):
         super().__init__(timeout=600)  # 10 minute timeout
 
-        # Add the select menu
-        self.add_item(CommandSelect(bot, author_id, guild_id))
+        # Add the select menu if guild_id is provided
+        if guild_id is not None:
+            self.add_item(CommandSelect(bot, author_id, guild_id))
 
 
 class Help(commands.Cog):
     """Help commands for displaying bot documentation and command usage"""
 
     def __init__(self, bot):
-        self.bot = bot
+        """Initialize the Help cog
+        
+        Args:
+            bot: The bot instance
+        """
+        self.bot = cast(PvPBot, bot)
         self.guild_cache = {}  # Simple cache to store guild models
         self.logger = logging.getLogger(__name__)
 
-    @app_commands.command(name="commands", description="View comprehensive help for all bot commands")
+    @discord.commands.slash_command(
+        name="commands",
+        description="View comprehensive help for all bot commands"
+    )
     async def commands(self, interaction: discord.Interaction):
         """Displays a comprehensive help system with all available commands"""
         try:
             # Defer the response to avoid timeout
             try:
-                await interaction.response.defer(ephemeral=False, thinking=True)
+                await interaction.response.defer(ephemeral=False)
             except Exception as e:
                 self.logger.error(f"Error deferring response in commands command: {e}")
                 return
 
             # First prepare a default theme in case we can't get the guild model
-            guild_id = interaction.guild_id
+            guild_id = interaction.guild_id if interaction.guild else None
             guild_model = None
 
             # Try to get the guild model with timeout protection
@@ -372,5 +401,10 @@ class Help(commands.Cog):
 
 
 async def setup(bot):
-    """Set up the Help cog"""
+    """Set up the Help cog
+    
+    Args:
+        bot: The Discord bot instance
+    """
+    # Cast the bot to the correct type
     await bot.add_cog(Help(bot))
