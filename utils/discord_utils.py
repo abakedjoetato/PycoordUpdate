@@ -87,7 +87,7 @@ async def server_id_autocomplete(interaction: discord.Interaction, current: str)
     standardized_options = []
     for sid, name in server_options:
         # Ensure server ID is standardized the same way as in Server.get_by_id
-        std_sid = standardize_server_id(sid)
+        std_sid = standardize_server_id(str(sid) if sid is not None else "")
         if std_sid:  # Only add if standardization succeeded
             standardized_options.append((std_sid, name))
     

@@ -208,7 +208,7 @@ class CSVProcessorCog(commands.Cog):
                         continue
 
                     raw_server_id = server.get("server_id")
-                    server_id = standardize_server_id(raw_server_id)
+                    server_id = standardize_server_id(str(raw_server_id) if raw_server_id is not None else "")
 
                     if not server_id:
                         continue
@@ -1019,7 +1019,7 @@ class CSVProcessorCog(commands.Cog):
         else:
             # Standardize the provided server ID
             raw_server_id = server_id
-            server_id = standardize_server_id(server_id)
+            server_id = standardize_server_id(str(server_id) if server_id is not None else "")
             logger.info(f"Standardized provided server ID from {raw_server_id} to {server_id}")
 
         # Get server config
@@ -1160,7 +1160,7 @@ class CSVProcessorCog(commands.Cog):
         else:
             # Standardize the provided server ID
             raw_server_id = server_id
-            server_id = standardize_server_id(server_id)
+            server_id = standardize_server_id(str(server_id) if server_id is not None else "")
             logger.info(f"Standardized provided server ID from {raw_server_id} to {server_id}")
 
         # Get server config
