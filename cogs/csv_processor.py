@@ -14,25 +14,21 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union, Tuple
 
 import discord
-from discord.ext import commands
-# Ensure discord_compat is imported for py-cord compatibility
-from utils.discord_compat import get_app_commands_module
-app_commands = get_app_commands_module(), tasks
-# Use compatibility layer to handle different Discord library versions
-from utils.discord_compat import get_app_commands_module, AppCommandOptionType
+from discord.ext import commands, tasks
+from discord.commands import Option, OptionChoice, SlashCommandGroup
+from discord.enums import SlashCommandOptionType
 
-# Get the appropriate app_commands module for the current Discord library
-app_commands = get_app_commands_module()
-
+# Import utils 
 from utils.csv_parser import CSVParser
 from utils.sftp import SFTPManager
 from utils.embed_builder import EmbedBuilder
 from utils.helpers import has_admin_permission
 from utils.parser_utils import parser_coordinator, normalize_event_data, categorize_event
-from utils.decorators import has_admin_permission as admin_permission_decorator, premium_tier_required
+from utils.decorators import has_admin_permission as admin_permission_decorator, premium_tier_required 
 from models.guild import Guild
 from models.server import Server
 from utils.discord_utils import server_id_autocomplete  # Import standardized autocomplete function
+from utils.pycord_utils import create_option
 
 logger = logging.getLogger(__name__)
 
@@ -965,19 +961,14 @@ class CSVProcessorCog(commands.Cog):
             finally:
                 self.is_processing = False
 
-    @app_commands.command(name="process_csv")
-    @app_commands.describe(
-        server_id="The server ID to process CSV files for",
-        hours="Number of hours to look back (default: 24)"
-    )
-    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
+    @discord.commands.slash_command(name="process_csv")
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for CSV processing
     async def process_csv_command(
         self,
         interaction: discord.Interaction,
-        server_id: Optional[str] = None,
-        hours: Optional[int] = 24
+        server_id: Option(str, "The server ID to process CSV files for", required=False, autocomplete=server_id_autocomplete) = None,
+        hours: Option(int, "Number of hours to look back", required=False, default=24) = 24
     ):
         """Manually process CSV files from the game server
 
@@ -1109,19 +1100,14 @@ class CSVProcessorCog(commands.Cog):
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="historical_parse")
-    @app_commands.describe(
-        server_id="The server ID to process historical data for",
-        days="Number of days to look back (default: 30)"
-    )
-    @app_commands.autocomplete(param_name="server_id", callback=server_id_autocomplete)
+    @discord.commands.slash_command(name="historical_parse")
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier
     async def historical_parse_command(
         self,
         interaction: discord.Interaction,
-        server_id: Optional[str] = None,
-        days: Optional[int] = 30
+        server_id: Option(str, "The server ID to process historical data for", required=False, autocomplete=server_id_autocomplete) = None,
+        days: Option(int, "Number of days to look back", required=False, default=30) = 30
     ):
         """Process historical CSV data going back further than normal processing
 
@@ -1222,7 +1208,7 @@ class CSVProcessorCog(commands.Cog):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="csv_status")
+    @discord.commands.slash_command(name="csv_status")
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for CSV status
     async def csv_status_command(self, interaction: discord.Interaction):
