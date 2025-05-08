@@ -921,8 +921,9 @@ class CSVProcessorCog(commands.Cog):
         from utils.server_utils import standardize_server_id
 
         # Standardize server ID
-        raw_server_id = server_id
-        server_id = standardize_server_id(server_id)
+        raw_server_id = server_id if server_id is not None else ""
+        # Ensure we pass a string to standardize_server_id
+        server_id = standardize_server_id(str(raw_server_id))
         logger.info(f"Starting historical parse for server {raw_server_id} (standardized to {server_id}), looking back {days} days")
 
         # Get server config
