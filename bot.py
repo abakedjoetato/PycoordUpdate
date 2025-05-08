@@ -8,18 +8,40 @@ import os
 import sys
 import asyncio
 import logging
+import importlib
 from typing import Dict, List, Optional, Any, Union, TypeVar, Callable, Tuple, Coroutine
 
-import discord
+# Ensure we're using py-cord 2.6.1
+try:
+    import discord
+    if discord.__version__ != "2.6.1":
+        logger = logging.getLogger('bot')
+        logger.warning(f"Warning: Using discord version {discord.__version__}, not 2.6.1 (py-cord)")
+        logger.info("Attempting to find py-cord 2.6.1 in installed packages...")
+        
+        # Check if py-cord is installed
+        pycord_info = next((d for d in importlib.metadata.distributions() 
+                          if d.metadata["Name"] == "py-cord" and d.version == "2.6.1"), None)
+        if pycord_info:
+            logger.info(f"Found py-cord {pycord_info.version}")
+        else:
+            logger.warning("py-cord 2.6.1 not found in installed packages")
+except ImportError:
+    print("Failed to import discord module. Make sure py-cord 2.6.1 is installed")
+    raise
+
+# Import required py-cord 2.6.1 modules
 from discord.ext import commands
-# Import the Bot class directly from discord.ext.commands for py-cord 2.6.1
 from discord.ext.commands import Bot
 from discord import app_commands
 from discord.app_commands import Choice
-from discord.enums import AppCommandOptionType
 
-# Import AppCommandOptionType directly from py-cord 2.6.1
-from discord.enums import AppCommandOptionType
+# In py-cord 2.6.1, AppCommandOptionType is from app_commands
+try:
+    from discord.app_commands import AppCommandOptionType
+except ImportError:
+    # Fallback if not available in this version
+    from discord.enums import AppCommandOptionType
 from utils.database import get_db
 from models.guild import Guild
 from utils.sftp import periodic_connection_maintenance

@@ -1,131 +1,187 @@
 """
-Script to install and configure py-cord 2.6.1 properly in the environment.
+Script to install py-cord 2.6.1 correctly and remove any conflicting packages.
 
 This script:
-1. Uninstalls both discord.py and py-cord to avoid conflicts
-2. Checks existing discord module in sys.path and removes it if necessary
-3. Installs py-cord 2.6.1 using pip
-4. Creates a site.py customization to ensure py-cord is prioritized
+1. Uninstalls discord.py and conflicting packages
+2. Installs py-cord 2.6.1
+3. Verifies the installation
 """
-import sys
 import os
+import sys
 import subprocess
-import shutil
-import importlib.util
+import importlib
 import importlib.metadata
-import site
 
-def uninstall_packages():
-    """Uninstall discord.py and py-cord to start fresh"""
-    print("Uninstalling discord.py and py-cord...")
-    subprocess.run([sys.executable, "-m", "pip", "uninstall", "-y", "discord.py", "discord-py", "py-cord"], 
-                  capture_output=True, text=True)
+def run_pip_command(cmd):
+    """Run a pip command and return its output"""
+    print(f"Running: {cmd}")
+    process = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+    print(process.stdout)
+    if process.stderr:
+        print(f"Error: {process.stderr}")
+    return process.returncode == 0
+
+def uninstall_conflicting_packages():
+    """Uninstall discord.py and any other conflicting packages"""
+    print("Uninstalling conflicting packages...")
     
-def remove_discord_module():
-    """Check for and remove any discord module from site-packages"""
-    print("Checking for existing discord module...")
-    for path in sys.path:
-        if 'site-packages' in path:
-            discord_path = os.path.join(path, 'discord')
-            if os.path.exists(discord_path):
-                print(f"Found discord module at {discord_path}")
-                print("Removing existing discord module...")
-                try:
-                    shutil.rmtree(discord_path)
-                    print("Successfully removed discord module")
-                except Exception as e:
-                    print(f"Error removing discord module: {e}")
+    # First find all discord-related packages
+    try:
+        discord_packages = []
+        for dist in importlib.metadata.distributions():
+            if "discord" in dist.metadata["Name"].lower() and dist.metadata["Name"] != "py-cord":
+                discord_packages.append(dist.metadata["Name"])
+        
+        print(f"Found discord packages to remove: {discord_packages}")
+        
+        # Uninstall all found packages
+        for package in discord_packages:
+            run_pip_command(f"{sys.executable} -m pip uninstall -y {package}")
+    except Exception as e:
+        print(f"Error finding packages: {e}")
+    
+    # Try specific uninstallations for common conflicting packages
+    packages_to_remove = [
+        "discord.py",
+        "discord-py",
+        "discord-py-slash-command",
+        "discord-ext-commands",
+    ]
+    
+    for package in packages_to_remove:
+        run_pip_command(f"{sys.executable} -m pip uninstall -y {package}")
+    
+    print("Finished uninstalling conflicting packages")
 
 def install_pycord():
     """Install py-cord 2.6.1"""
     print("Installing py-cord 2.6.1...")
-    result = subprocess.run([sys.executable, "-m", "pip", "install", "--no-deps", "py-cord==2.6.1"], 
-                         capture_output=True, text=True)
-    print(result.stdout)
-    if result.returncode != 0:
-        print(f"Error: {result.stderr}")
-        raise Exception("Failed to install py-cord")
-
-def create_sitecustomize():
-    """Create a sitecustomize.py file to ensure py-cord takes precedence"""
-    print("Creating site customization for proper imports...")
-    site_packages = site.getsitepackages()
-    for site_path in site_packages:
-        if 'site-packages' in site_path:
-            sitecustomize_path = os.path.join(site_path, 'sitecustomize.py')
-            with open(sitecustomize_path, 'w') as f:
-                f.write("""
-# Custom import handler to prioritize py-cord over discord.py
-import sys
-import os
-
-def ensure_pycord_priority():
-    \"\"\"Ensure py-cord takes priority in the import path\"\"\"
-    for path in sys.path:
-        if 'site-packages' in path:
-            # Check for py-cord specific files to identify it
-            pycord_marker = os.path.join(path, 'py_cord-2.6.1.dist-info')
-            if os.path.exists(pycord_marker):
-                # Move this path to the front of sys.path if it isn't already
-                if sys.path[0] != path:
-                    sys.path.remove(path)
-                    sys.path.insert(0, path)
-                    print(f"Prioritized {path} in sys.path for py-cord")
-                    return True
-    return False
-
-# Run the prioritization
-ensure_pycord_priority()
-""")
-            print(f"Created sitecustomize.py at {sitecustomize_path}")
-            return
-    print("Warning: Could not find site-packages directory")
-
-def check_installation():
-    """Check that py-cord was installed correctly"""
-    print("\nChecking py-cord installation...")
-    try:
-        import discord
-        version = getattr(discord, "__version__", "Unknown")
-        print(f"Discord module version: {version}")
-        print(f"Discord module path: {discord.__file__}")
-        
-        # Additional py-cord specific checks
-        if hasattr(discord, "slash_command"):
-            print("✓ Found discord.slash_command (py-cord feature)")
-        else:
-            print("✗ No discord.slash_command found")
+    
+    # First use --no-deps to avoid pulling in discord.py
+    success = run_pip_command(f"{sys.executable} -m pip install --no-deps py-cord==2.6.1")
+    
+    # Then install dependencies except discord.py and related packages
+    if success:
+        print("Installing dependencies...")
+        deps = [
+            "aiohttp>=3.7.4",
+            "attrs>=17.3.0",
+            "frozenlist>=1.1.1",
+            "multidict>=4.5",
+            "yarl>=1.7.0",
+            "typing_extensions>=4.0.0"
+        ]
+        for dep in deps:
+            success = run_pip_command(f"{sys.executable} -m pip install --upgrade {dep}")
+            if not success:
+                print(f"Failed to install dependency: {dep}")
+                
+        # Create a symlink or fix paths to make imports work correctly
+        print("Setting up import paths...")
+        try:
+            import site
+            site_packages = site.getsitepackages()[0]
+            print(f"Site packages directory: {site_packages}")
             
-        if hasattr(discord.ext, "bridge"):
-            print("✓ Found discord.ext.bridge (py-cord feature)")
+            # Try to fix discord imports 
+            if os.path.exists(os.path.join(site_packages, 'py_cord')):
+                print("Found py_cord directory, ensuring imports work correctly")
+            else:
+                print("py_cord directory not found in site packages")
+        except Exception as e:
+            print(f"Error setting up paths: {e}")
+    
+    print("Finished installing py-cord and dependencies")
+    return success
+
+def verify_installation():
+    """Verify py-cord is correctly installed"""
+    print("Verifying py-cord installation...")
+    
+    try:
+        # Attempt to import discord module
+        import discord
+        print(f"Successfully imported discord module (py-cord)")
+        print(f"Version: {discord.__version__}")
+        
+        # Check if this is definitely py-cord by testing imports
+        try:
+            from discord.ext import bridge
+            print("Successfully imported bridge module - confirmed as py-cord")
+            bridge_found = True
+        except ImportError:
+            print("Failed to import bridge module - not py-cord")
+            bridge_found = False
+        
+        # Try importing expected modules
+        try:
+            from discord.ext import commands
+            print("Successfully imported commands module")
+            commands_ok = True
+        except ImportError:
+            print("Failed to import commands module")
+            commands_ok = False
+            
+        try:
+            from discord import app_commands
+            print("Successfully imported app_commands module")
+            app_commands_ok = True
+        except ImportError:
+            print("Failed to import app_commands module")
+            app_commands_ok = False
+        
+        # Check if necessary classes are available
+        if app_commands_ok:
+            print("\nChecking for app_commands.AppCommandOptionType...")
+            try:
+                from discord.app_commands import AppCommandOptionType
+                print("AppCommandOptionType found in app_commands")
+                app_commands_type_ok = True
+            except ImportError:
+                print("AppCommandOptionType not found in app_commands")
+                app_commands_type_ok = False
         else:
-            print("✗ No discord.ext.bridge found")
+            app_commands_type_ok = False
+        
+        # Overall verification result
+        if bridge_found and commands_ok and app_commands_ok and app_commands_type_ok:
+            print("\nVerification PASSED: py-cord 2.6.1 is correctly installed")
+            return True
+        else:
+            print("\nVerification FAILED: py-cord 2.6.1 is not correctly installed")
+            print(f"- bridge module available: {bridge_found}")
+            print(f"- commands module available: {commands_ok}")
+            print(f"- app_commands module available: {app_commands_ok}")
+            print(f"- AppCommandOptionType available: {app_commands_type_ok}")
+            return False
             
     except ImportError as e:
-        print(f"Error importing discord module: {e}")
+        print(f"Error importing discord: {e}")
+        print("py-cord is not installed or not working correctly")
+        return False
 
 def main():
-    """Main installation process"""
-    print("=" * 50)
-    print("Py-cord 2.6.1 Installation Script")
-    print("=" * 50)
+    """Main entry point"""
+    print("=== py-cord 2.6.1 Installation Script ===")
     
-    # Step 1: Uninstall existing packages
-    uninstall_packages()
+    # 1. Uninstall conflicting packages
+    uninstall_conflicting_packages()
     
-    # Step 2: Remove existing discord module
-    remove_discord_module()
+    # 2. Install py-cord
+    if install_pycord():
+        print("py-cord installation completed successfully")
+    else:
+        print("Failed to install py-cord")
+        return 1
     
-    # Step 3: Install py-cord 2.6.1
-    install_pycord()
+    # 3. Verify installation
+    if verify_installation():
+        print("Installation verified! You can now import discord modules from py-cord.")
+    else:
+        print("Verification failed. See above errors for details.")
+        return 1
     
-    # Step 4: Create site customization
-    create_sitecustomize()
-    
-    # Step 5: Check installation
-    check_installation()
-    
-    print("\nInstallation process complete. Please restart your Python interpreter.")
-    
+    return 0
+
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

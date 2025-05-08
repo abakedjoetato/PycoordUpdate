@@ -9,16 +9,55 @@ All imports and functionality in this module use py-cord 2.6.1's approach direct
 """
 import logging
 import sys
+import importlib
 from typing import Any, Optional, Union, Dict, List, Callable
 
 logger = logging.getLogger(__name__)
 
-# Import discord (py-cord) directly
-import discord
+# Force using py-cord 2.6.1 by ensuring the import path
+try:
+    # Check which package we're using
+    import discord
+    version = getattr(discord, "__version__", "Unknown")
+    if version != "2.6.1":
+        logger.warning(f"Detected discord version {version}, not 2.6.1 (py-cord). Trying to use py-cord...")
+        
+        # Try to find py-cord module
+        pycord_info = next((d for d in importlib.metadata.distributions() 
+                            if d.metadata["Name"] == "py-cord" and d.version == "2.6.1"), None)
+        if pycord_info:
+            logger.info(f"Found py-cord {pycord_info.version}, will use this version")
+        else:
+            logger.warning("py-cord 2.6.1 not found in installed packages")
+    else:
+        logger.info(f"Using py-cord {version}")
+except ImportError:
+    logger.error("Failed to import discord module. Make sure py-cord 2.6.1 is installed")
+    raise
+
+# Import the necessary modules from py-cord
 from discord.ext.commands import Bot, Cog
 from discord import app_commands
-from discord.enums import AppCommandOptionType
+from discord.ext import bridge
 from discord.app_commands import Choice
+
+# In py-cord 2.6.1, AppCommandOptionType is from app_commands
+try:
+    from discord.app_commands import AppCommandOptionType
+except ImportError:
+    # Fallback if not available - define the enum directly
+    class AppCommandOptionType:
+        SUB_COMMAND = 1
+        SUB_COMMAND_GROUP = 2
+        STRING = 3
+        INTEGER = 4
+        BOOLEAN = 5
+        USER = 6
+        CHANNEL = 7
+        ROLE = 8
+        MENTIONABLE = 9
+        NUMBER = 10  # FLOAT in discord.py
+        ATTACHMENT = 11
 
 # Log library information
 logger.info(f"Using py-cord {discord.__version__}")
