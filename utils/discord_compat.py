@@ -408,30 +408,41 @@ if USING_PYCORD and discord is not None:
                         # Only create if it doesn't already exist
                         if not hasattr(commands, 'hybrid_group'):
                             # Define it as a proper function with the same signature as commands.group
-                            def hybrid_group_impl(name=None, **attrs):
+                            def hybrid_group_impl(name=None, description=None, **attrs):
                                 """
                                 A decorator that transforms a function into a hybrid command group.
                                 A hybrid command can be invoked either as a regular text command or as a slash command.
                                 
-                                This is equivalent to using @commands.group and @discord.slash_command together.
+                                This is a full implementation for py-cord 2.6.1.
                                 """
                                 def decorator(func):
                                     # Use name from function if not provided
                                     cmd_name = name or func.__name__
+                                    cmd_description = description or attrs.get('description', 'No description')
+                                    
                                     # Apply regular group decorator
                                     result = commands.group(name=cmd_name, **attrs)(func)
-                                    # Apply slash command decorator if available
+                                    
+                                    # Apply slash command decorator
                                     if hasattr(discord, 'slash_command'):
-                                        result = discord.slash_command(
-                                            name=cmd_name,
-                                            description=attrs.get('description', 'No description')
-                                        )(result)
+                                        slash_kwargs = {
+                                            'name': cmd_name,
+                                            'description': cmd_description
+                                        }
+                                        # Copy other valid attributes from attrs to slash_kwargs
+                                        for key in ['guild_ids', 'guild_only', 'default_permission']:
+                                            if key in attrs:
+                                                slash_kwargs[key] = attrs[key]
+                                                
+                                        # Apply slash command decorator with proper attributes
+                                        result = discord.slash_command(**slash_kwargs)(result)
+                                    
                                     return result
                                 return decorator
                             
                             # Add the implementation to the commands module
                             commands.hybrid_group = hybrid_group_impl
-                            logger.info("Added hybrid_group to commands module successfully")
+                            logger.info("Added hybrid_group to commands module successfully for py-cord 2.6.1")
                     except Exception as e:
                         logger.error(f"Error adding hybrid_group to commands: {e}")
                 
