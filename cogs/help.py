@@ -49,7 +49,7 @@ class CommandSelect(discord.ui.Select):
 
     async def callback(self, interaction: discord.Interaction):
         # Only allow the original command user to use the dropdown
-        if interaction.user.id != self.author_id:
+        if interaction.user and interaction.user.id != self.author_id:
             await interaction.response.send_message("This menu is not for you.", ephemeral=True)
             return
 
@@ -112,7 +112,7 @@ class CommandSelect(discord.ui.Select):
                 {"name": "/admin help", "value": "Show help for admin commands", "inline": False},
             ]
 
-        elif category == "Setup":
+        elif category_str == "Setup":
             title = "⚙️ Setup Commands"
             description = "Server setup and configuration commands"
             fields = [
@@ -123,7 +123,7 @@ class CommandSelect(discord.ui.Select):
                 {"name": "/setup historical_parse <server>", "value": "Parse all historical data for a server", "inline": False},
             ]
 
-        elif category == "Killfeed":
+        elif category_str == "Killfeed":
             title = "☠️ Killfeed Commands"
             description = "Killfeed monitoring commands"
             fields = [
@@ -132,7 +132,7 @@ class CommandSelect(discord.ui.Select):
                 {"name": "/killfeed status", "value": "Check the status of killfeed monitors for this guild", "inline": False},
             ]
 
-        elif category == "Events":
+        elif category_str == "Events":
             title = "🔔 Events Commands"
             description = "Server events monitoring commands"
             fields = [
@@ -146,7 +146,7 @@ class CommandSelect(discord.ui.Select):
                 {"name": "/events configure_suicides <server> [options]", "value": "Configure which suicide notifications are enabled", "inline": False},
             ]
 
-        elif category == "Stats":
+        elif category_str == "Stats":
             title = "📊 Stats Commands"
             description = "Player and server statistics commands"
             premium_note = "\n\n**Note:** Basic stats require Survivor tier, enhanced stats require Mercenary or higher"
@@ -161,7 +161,7 @@ class CommandSelect(discord.ui.Select):
                 {"name": "/stats top_rivalries <server>", "value": "View the top rivalries on the server (Warlord+ tier)", "inline": False},
             ]
 
-        elif category == "Economy":
+        elif category_str == "Economy":
             title = "💰 Economy Commands"
             description = "Economy and gambling features"
             premium_note = "\n\n**Note:** Basic economy requires Mercenary tier, gambling features available on Mercenary+ tiers"
@@ -177,7 +177,7 @@ class CommandSelect(discord.ui.Select):
                 {"name": "/gambling roulette <server> [bet] [bet_type]", "value": "Play roulette (Mercenary+ tiers)", "inline": False},
             ]
 
-        elif category == "Premium":
+        elif category_str == "Premium":
             title = "✨ Premium Commands"
             description = "Premium features and management commands"
             fields = [
@@ -190,7 +190,7 @@ class CommandSelect(discord.ui.Select):
             # Add premium tiers information
             fields.append({"name": "Premium Tiers", "value": "**Scavenger** (Free): Basic server management, killfeed (1 server)\n**Survivor** (£5): Basic stats, enhanced killfeeds (1 server)\n**Mercenary** (£10): Enhanced stats, basic economy, simple gambling (2 servers)\n**Warlord** (£20): Full stats, economy, rivalries, basic bounties (3 servers)\n**Overseer** (£50): All features including advanced bounties, all gambling games (unlimited servers)", "inline": False})
 
-        elif category == "Parser":
+        elif category_str == "Parser":
             title = "📋 Parser System"
             description = "Tower of Temptation PvP Stats uses a sophisticated three-part parsing system for comprehensive data collection"
             fields = [
@@ -342,8 +342,9 @@ class Help(commands.Cog):
                 )
                 embed.set_footer(text="Select a category to see detailed command information")
 
-            # Create and send view with dropdown
-            view = CommandsView(self.bot, interaction.user.id, guild_id)
+            # Create and send view with dropdown - ensure user is validated
+            user_id = interaction.user.id if interaction.user else 0
+            view = CommandsView(self.bot, user_id, guild_id)
 
             # Check if embed is a coroutine (shouldn't happen but let's be safe)
             try:
