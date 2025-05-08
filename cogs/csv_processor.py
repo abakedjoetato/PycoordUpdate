@@ -320,6 +320,7 @@ class CSVProcessorCog(commands.Cog):
         files_processed = 0
         events_processed = 0
         
+        # Initialize the main try-except-finally structure
         try:
             # Create a new SFTP client for this server if none exists
             if server_id not in self.sftp_managers:
