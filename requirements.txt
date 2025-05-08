@@ -49,3 +49,4 @@ requests
 trafilatura
 werkzeug
 wtforms
+py-cord
