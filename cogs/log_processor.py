@@ -128,7 +128,7 @@ class LogProcessorCog(commands.Cog):
                 raw_server_id = server.get("server_id")
 
                 # Standardize the server ID for consistent handling
-                server_id = standardize_server_id(raw_server_id)
+                server_id = standardize_server_id(str(raw_server_id) if raw_server_id is not None else "")
                 if not server_id:
                     logger.warning(f"Invalid server ID format: {raw_server_id}, skipping")
                     continue

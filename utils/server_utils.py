@@ -492,7 +492,7 @@ async def find_server_in_all_guilds(db, server_id: Union[str, int, None]) -> Lis
             # Manually search for matching servers
             for guild in all_guilds:
                 for server in guild.get("servers", []):
-                    if standardize_server_id(server.get("server_id")) == str_server_id:
+                    if standardize_server_id(str(server.get("server_id")) if server.get("server_id") is not None else "") == str_server_id:
                         results.append({
                             "guild_id": str(guild.get("guild_id", "unknown")),
                             "guild_name": guild.get("name", "Unknown Guild"),
