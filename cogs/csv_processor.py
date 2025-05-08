@@ -27,7 +27,7 @@ from utils.parser_utils import parser_coordinator, normalize_event_data, categor
 from utils.decorators import has_admin_permission as admin_permission_decorator, premium_tier_required 
 from models.guild import Guild
 from models.server import Server
-from utils.discord_utils import server_id_autocomplete  # Import standardized autocomplete function
+from utils.autocomplete import server_id_autocomplete  # Import standardized autocomplete function
 from utils.pycord_utils import create_option
 
 logger = logging.getLogger(__name__)
@@ -1081,7 +1081,7 @@ class CSVProcessorCog(commands.Cog):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="clear_csv_cache")
+    @discord.commands.slash_command(name="clear_csv_cache")
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for CSV cache management
     async def clear_csv_cache_command(self, interaction: discord.Interaction):
