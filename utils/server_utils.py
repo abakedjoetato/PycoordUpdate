@@ -256,7 +256,7 @@ async def get_server(db, server_id: Union[str, int, None], guild_id: Union[str, 
                 continue
                 
             # Get server_id with standardization
-            server_id_value = standardize_server_id(server.get("server_id"))
+            server_id_value = standardize_server_id(str(server.get("server_id")) if server.get("server_id") is not None else "")
             if server_id_value is None:
                 continue
                 
