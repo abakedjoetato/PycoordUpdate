@@ -64,3 +64,4 @@ py-cord
 pymongo[srv]
 python-dotenv
 pytz
+py-cord>=2.6.1
