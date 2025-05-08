@@ -61,7 +61,62 @@ async def sync_guilds_with_database(bot):
 async def initialize_bot(force_sync=False):
     """Initialize the Discord bot and load cogs"""
     # Create bot instance with hardcoded owner ID
-    bot = commands.Bot(
+    # Using proper py-cord Bot initialization
+    # Import types at the module level
+    from typing import Dict, Any, Optional
+    import asyncio
+    
+    class PvPBot(commands.Bot):
+        """Custom Bot class with additional attributes for our application"""
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            # Initialize private attributes
+            self._db = None
+            self._background_tasks = {}
+            self._sftp_connections = {}
+            self._home_guild_id = None
+        
+        @property
+        def db(self) -> Any:
+            """Database connection getter"""
+            return self._db
+            
+        @db.setter
+        def db(self, value: Any):
+            """Database connection setter"""
+            self._db = value
+            
+        @property
+        def home_guild_id(self) -> Optional[int]:
+            """Home guild ID getter"""
+            return self._home_guild_id
+            
+        @home_guild_id.setter
+        def home_guild_id(self, value: Optional[int]):
+            """Home guild ID setter"""
+            self._home_guild_id = value
+            
+        @property
+        def background_tasks(self) -> Dict[str, asyncio.Task]:
+            """Background tasks getter"""
+            return self._background_tasks
+            
+        @background_tasks.setter
+        def background_tasks(self, value: Dict[str, asyncio.Task]):
+            """Background tasks setter"""
+            self._background_tasks = value
+            
+        @property
+        def sftp_connections(self) -> Dict[str, Any]:
+            """SFTP connections getter"""
+            return self._sftp_connections
+            
+        @sftp_connections.setter
+        def sftp_connections(self, value: Dict[str, Any]):
+            """SFTP connections setter"""
+            self._sftp_connections = value
+    
+    bot = PvPBot(
         command_prefix='!', 
         intents=intents, 
         help_command=None,
@@ -70,12 +125,6 @@ async def initialize_bot(force_sync=False):
         sync_commands=True,
         sync_commands_debug=True
     )
-    
-    # Initialize background tasks dictionary
-    bot.background_tasks = {}
-    
-    # Initialize SFTP connections dictionary
-    bot.sftp_connections = {}
     
     # Initialize database connection
     logger.info("Initializing database connection...")
@@ -110,8 +159,12 @@ async def initialize_bot(force_sync=False):
     @bot.event
     async def on_ready():
         """Called when the bot is ready to start accepting commands"""
-        logger.info(f"Bot logged in as {bot.user.name} (ID: {bot.user.id})")
-        logger.info(f"Connected to {len(bot.guilds)} guilds")
+        # Add proper error handling for user property
+        if bot.user:
+            logger.info(f"Bot logged in as {bot.user.name} (ID: {bot.user.id})")
+            logger.info(f"Connected to {len(bot.guilds)} guilds")
+        else:
+            logger.warning("Bot logged in but user property is None")
         logger.info(f"Discord API version: {discord.__version__}")
         
         # Set bot status
@@ -146,8 +199,12 @@ async def initialize_bot(force_sync=False):
         
         if force_sync:
             logger.info("Syncing application commands...")
-            await bot.sync_commands()
-            logger.info("Application commands synced!")
+            try:
+                # Proper py-cord commands syncing
+                await bot.sync_commands()
+                logger.info("Application commands synced successfully!")
+            except Exception as e:
+                logger.error(f"Error syncing commands: {e}", exc_info=True)
     
     @bot.event
     async def on_guild_join(guild):
@@ -196,15 +253,27 @@ async def initialize_bot(force_sync=False):
     logger.info("Loading cogs...")
     cog_count = 0
     cog_dir = 'cogs'
-    for filename in os.listdir(cog_dir):
-        if filename.endswith('.py') and not filename.startswith('_'):
+    
+    # Get list of cog files
+    try:
+        # First get the list of cog files without awaiting anything
+        cog_files = []
+        for f in os.listdir(cog_dir):
+            if f.endswith('.py') and not f.startswith('_'):
+                cog_files.append(f)
+        
+        # Now load each cog with proper awaiting
+        for filename in cog_files:
             cog_name = filename[:-3]
             try:
+                # Proper py-cord extension loading
                 await bot.load_extension(f"{cog_dir}.{cog_name}")
                 logger.info(f"Loaded cog: {cog_name}")
                 cog_count += 1
             except Exception as e:
                 logger.error(f"Failed to load cog {cog_name}: {e}")
+    except Exception as e:
+        logger.error(f"Error listing cog directory: {e}")
     
     logger.info(f"Successfully loaded {cog_count} cogs")
     return bot
