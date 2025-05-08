@@ -13,12 +13,11 @@ import re
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union, Tuple, cast, TypeVar, Protocol, TYPE_CHECKING, Coroutine
 
-# Import discord modules
+# Import discord modules with direct py-cord 2.6.1 approach
 import discord
-from discord.ext.commands import Bot
 from discord.ext import commands, tasks
-from discord.commands import Option, OptionChoice, SlashCommandGroup
-from discord.enums import SlashCommandOptionType
+from discord import app_commands
+from discord.enums import AppCommandOptionType
 
 # Type definition for bot with db property
 class MotorDatabase(Protocol):
@@ -987,27 +986,18 @@ class CSVProcessorCog(commands.Cog):
             finally:
                 self.is_processing = False
 
-    @discord.commands.slash_command(
+    @app_commands.command(
         name="process_csv",
         description="Manually process CSV files from the game server"
     )
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for CSV processing
+    @app_commands.autocomplete(server_id=server_id_autocomplete)
     async def process_csv_command(
         self,
         interaction: discord.Interaction,
-        server_id: discord.Option(
-            str, 
-            "The server ID to process CSV files for", 
-            required=False,
-            autocomplete=server_id_autocomplete
-        ) = None,
-        hours: discord.Option(
-            int, 
-            "Number of hours to look back", 
-            required=False, 
-            default=24
-        ) = 24
+        server_id: Optional[str] = None,
+        hours: int = 24
     ):
         """Manually process CSV files from the game server
 
@@ -1120,7 +1110,7 @@ class CSVProcessorCog(commands.Cog):
                 )
                 await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @discord.commands.slash_command(
+    @app_commands.command(
         name="clear_csv_cache",
         description="Clear the CSV parser cache"
     )
@@ -1142,27 +1132,18 @@ class CSVProcessorCog(commands.Cog):
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.commands.slash_command(
+    @app_commands.command(
         name="historical_parse",
         description="Process historical CSV data going back further than normal processing"
     )
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier
+    @app_commands.autocomplete(server_id=server_id_autocomplete)
     async def historical_parse_command(
         self,
         interaction: discord.Interaction,
-        server_id: discord.Option(
-            str, 
-            "The server ID to process historical data for", 
-            required=False,
-            autocomplete=server_id_autocomplete
-        ) = None,
-        days: discord.Option(
-            int, 
-            "Number of days to look back", 
-            required=False, 
-            default=30
-        ) = 30
+        server_id: Optional[str] = None,
+        days: int = 30
     ):
         """Process historical CSV data going back further than normal processing
 
@@ -1263,7 +1244,7 @@ class CSVProcessorCog(commands.Cog):
             )
             await interaction.followup.send(embed=embed, ephemeral=True)
 
-    @discord.commands.slash_command(
+    @app_commands.command(
         name="csv_status",
         description="Show CSV processor status"
     )

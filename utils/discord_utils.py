@@ -5,9 +5,7 @@ import logging
 import discord
 from typing import Any, Dict, List, Optional, Union, Tuple
 from discord.ext import commands
-# Ensure discord_compat is imported for py-cord compatibility
-from utils.discord_compat import get_app_commands_module
-app_commands = get_app_commands_module()
+from discord import app_commands
 from utils.server_utils import standardize_server_id
 
 logger = logging.getLogger(__name__)

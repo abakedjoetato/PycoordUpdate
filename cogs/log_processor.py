@@ -15,7 +15,8 @@ from typing import Dict, List, Optional, Any, Tuple, Protocol, TypeVar, cast, Un
 
 import discord
 from discord.ext import commands, tasks
-from discord.commands import Option, SlashCommandGroup
+from discord import app_commands
+from discord.enums import AppCommandOptionType
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 
 # Define a protocol for PvPBot to handle database access properly
@@ -59,7 +60,7 @@ logger = logging.getLogger(__name__)
 class LogProcessorCog(commands.Cog):
     """Commands and background tasks for processing game log files"""
 
-    async def server_id_autocomplete(self, interaction: discord.Interaction, current: str) -> List[discord.commands.OptionChoice]:
+    async def server_id_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
         """Autocomplete for server selection by name, returns server_id as value
 
         Args:
@@ -67,7 +68,7 @@ class LogProcessorCog(commands.Cog):
             current: Current input value
 
         Returns:
-            List[discord.commands.OptionChoice]: List of server choices
+            List[app_commands.Choice[str]]: List of server choices
         """
         return await server_id_autocomplete(interaction, current)
 
@@ -497,27 +498,18 @@ class LogProcessorCog(commands.Cog):
             logger.error(f"SFTP error for server {server_id}: {str(e)}")
             return 0, 0
 
-    @discord.commands.slash_command(
+    @app_commands.command(
         name="process_logs",
         description="Manually process game log files"
     )
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for log processing
+    @app_commands.autocomplete(server_id=server_id_autocomplete)
     async def process_logs_command(
         self,
         interaction: discord.Interaction,
-        server_id: discord.Option(
-            str,
-            description="The server ID to process logs for",
-            required=False,
-            autocomplete=server_id_autocomplete
-        ) = None,
-        minutes: discord.Option(
-            int,
-            description="Number of minutes to look back",
-            required=False,
-            default=15
-        ) = 15
+        server_id: Optional[str] = None,
+        minutes: Optional[int] = 15
     ):
         """Manually process game log files
 
@@ -589,7 +581,7 @@ class LogProcessorCog(commands.Cog):
                 from utils.discord_utils import hybrid_send
                 await hybrid_send(interaction, embed=embed, ephemeral=True)
 
-    @discord.commands.slash_command(
+    @app_commands.command(
         name="log_status",
         description="Show log processor status"
     )

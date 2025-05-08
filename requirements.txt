@@ -20,8 +20,13 @@ python-dotenv>=1.1.0
 pytz>=2024.1
 requests>=2.31.0
 sqlalchemy>=2.0.27
-discord-py
 motor
 py-cord==2.6.1
 werkzeug
 wtforms
+py-cord==2.6.1
+py-cord==2.6.1
+py-cord==2.6.1
+py-cord==2.6.1
+discord-py
+py-cord==2.6.1

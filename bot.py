@@ -12,8 +12,11 @@ from typing import Dict, List, Optional, Any, Union, TypeVar, Callable, Tuple, C
 
 import discord
 from discord.ext import commands
-from discord.commands import Option, OptionChoice, SlashCommandGroup
-from discord.enums import SlashCommandOptionType
+from discord import app_commands
+from discord.app_commands import Choice
+
+# Import AppCommandOptionType directly from py-cord 2.6.1
+from discord.enums import AppCommandOptionType
 from utils.database import get_db
 from models.guild import Guild
 from utils.sftp import periodic_connection_maintenance
@@ -118,6 +121,30 @@ async def initialize_bot(force_sync=False):
         def sftp_connections(self, value: Dict[str, Any]):
             """SFTP connections setter"""
             self._sftp_connections = value
+            
+        async def sync_commands(self, guild_ids=None):
+            """
+            Sync application commands with Discord.
+            
+            This implementation uses py-cord 2.6.1's tree.sync() method
+            as required by Rule #2 in rules.md.
+            
+            Args:
+                guild_ids: Optional list of guild IDs to sync commands for
+                
+            Returns:
+                List of synced commands
+            """
+            if guild_ids:
+                # Sync commands for specific guilds
+                result = []
+                for guild_id in guild_ids:
+                    guild_results = await self.tree.sync(guild=discord.Object(id=guild_id))
+                    result.extend(guild_results)
+                return result
+            
+            # Sync global commands
+            return await self.tree.sync()
     
     bot = PvPBot(
         command_prefix='!', 

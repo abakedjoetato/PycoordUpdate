@@ -30,34 +30,34 @@ logger = logging.getLogger('discord_fix')
 COGS_DIR = "cogs"
 UTILS_DIR = "utils"
 
-# Create a more robust AppCommandOptionType injection for discord.enums
-DISCORD_ENUMS_PATCH = """
-# Add AppCommandOptionType compatibility with SlashCommandOptionType
-if not hasattr(discord.enums, 'AppCommandOptionType'):
-    if hasattr(discord.enums, 'SlashCommandOptionType'):
-        # Create a class that inherits from SlashCommandOptionType
-        class AppCommandOptionType(discord.enums.SlashCommandOptionType):
-            pass
-        # Add to discord.enums
-        setattr(discord.enums, 'AppCommandOptionType', AppCommandOptionType)
+# For py-cord 2.6.1, we directly use the AppCommandOptionType from discord.enums
+# No compatibility layer needed as we're using the direct imports as specified in rule #2
+DISCORD_ENUMS_DIRECT = """
+# Direct py-cord 2.6.1 import for AppCommandOptionType
+from discord.enums import AppCommandOptionType
 """
 
 # Define patterns to search for and their replacements
 IMPORT_REPLACEMENTS = [
-    # Replace direct import of AppCommandOptionType with our compatibility version
+    # Direct import of AppCommandOptionType from discord.enums for py-cord 2.6.1
     (
-        r'from discord\.enums import (\w+,\s*)*AppCommandOptionType',
-        'from utils.discord_compat import AppCommandOptionType'
+        r'from utils\.discord_compat import AppCommandOptionType',
+        'from discord.enums import AppCommandOptionType'
     ),
-    # Replace other direct imports where needed but keep original formatting
+    # Direct import of app_commands for py-cord 2.6.1
     (
-        r'from discord import app_commands',
-        'import discord\n# Use app_commands via discord.app_commands for py-cord compatibility'
+        r'from utils\.discord_compat import get_app_commands_module\napp_commands = get_app_commands_module\(\)',
+        'from discord import app_commands'
     ),
-    # Keep app_commands import but ensure our compatibility layer is used
+    # Replace discord.commands imports with app_commands
     (
-        r'from discord\.ext import commands',
-        'from discord.ext import commands\n# Ensure discord_compat is imported for py-cord compatibility\nfrom utils.discord_compat import get_app_commands_module\napp_commands = get_app_commands_module()'
+        r'from discord\.commands import Option, (SlashCommandGroup|OptionChoice)',
+        'from discord import app_commands\nfrom discord.enums import AppCommandOptionType'
+    ),
+    # Replace slash_command with app_commands.command
+    (
+        r'@discord\.commands\.slash_command',
+        '@app_commands.command'
     ),
 ]
 
@@ -76,26 +76,37 @@ def fix_file(file_path):
             content = re.sub(pattern, replacement, content)
             modified = True
     
-    # Add enums patch if the file imports discord.enums
-    if ('import discord.enums' in content or 'from discord import enums' in content) and DISCORD_ENUMS_PATCH not in content:
+    # Add direct AppCommandOptionType import if needed
+    if 'discord.enums' not in content and 'discord import enums' not in content and 'AppCommandOptionType' in content:
         import_pos = content.find('import discord')
         if import_pos != -1:
             # Find the next blank line after imports
             next_line = content.find('\n\n', import_pos)
             if next_line != -1:
-                content = content[:next_line] + DISCORD_ENUMS_PATCH + content[next_line:]
+                content = content[:next_line] + DISCORD_ENUMS_DIRECT + content[next_line:]
                 modified = True
             else:
                 # If no blank line found, add at the end of imports
-                content += DISCORD_ENUMS_PATCH
+                content += DISCORD_ENUMS_DIRECT
                 modified = True
     
-    # Check for autocomplete functions that need fixing
-    if 'autocomplete(server_id=' in content:
-        content = content.replace('autocomplete(server_id=', 'autocomplete(param_name="server_id", callback=')
+    # Update autocomplete functions to use py-cord 2.6.1 style which is param=callback
+    # From: @app_commands.autocomplete(param_name="server_id", callback=my_callback)
+    # To:   @app_commands.autocomplete(server_id=my_callback)
+    if 'autocomplete(param_name=' in content:
+        pattern = r'autocomplete\(param_name="(\w+)",\s*callback=(\w+)\)'
+        replacement = r'autocomplete(\1=\2)'
+        content = re.sub(pattern, replacement, content)
         modified = True
     
-    # If OptionChoice is used as a subscription type, fix it
+    # Convert any remaining OptionChoice uses to app_commands.Choice
+    if 'OptionChoice' in content:
+        content = content.replace('discord.commands.OptionChoice', 'discord.app_commands.Choice')
+        content = content.replace('from discord.commands import OptionChoice', 'from discord import app_commands')
+        content = content.replace('OptionChoice(', 'app_commands.Choice(')
+        modified = True
+        
+    # Fix app_commands.Choice usage with type hints
     if 'app_commands.Choice[' in content:
         content = content.replace('app_commands.Choice[', 'app_commands.Choice(name=')
         content = re.sub(r'app_commands\.Choice\(name=(\w+)\)', r'app_commands.Choice(name="\1", value=\1)', content)

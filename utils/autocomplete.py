@@ -8,6 +8,7 @@ import logging
 from typing import List
 
 import discord
+from discord import app_commands
 
 from utils.server_utils import standardize_server_id
 
@@ -23,7 +24,7 @@ async def server_id_autocomplete(interaction: discord.Interaction, current: str)
         current: Current input value
         
     Returns:
-        List of discord.commands.OptionChoice options
+        List of discord.app_commands.Choice options
     """
     # Get database connection
     from utils.database import get_db
@@ -58,7 +59,7 @@ async def server_id_autocomplete(interaction: discord.Interaction, current: str)
     
     # Return as choices (limited to 25 as per Discord API limits)
     return [
-        discord.commands.OptionChoice(name=f"{name} ({sid})", value=sid)
+        app_commands.Choice(name=f"{name} ({sid})", value=sid)
         for sid, name in standardized_options[:25]
     ]
 

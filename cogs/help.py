@@ -6,6 +6,7 @@ import asyncio
 from typing import Optional, Dict, List, Any, cast, Protocol, TypeVar, Union
 
 from discord.ext import commands
+from discord import app_commands
 from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
 
 # Define a protocol for PvPBot to handle database access properly
@@ -269,7 +270,7 @@ class Help(commands.Cog):
         self.guild_cache = {}  # Simple cache to store guild models
         self.logger = logging.getLogger(__name__)
 
-    @discord.commands.slash_command(
+    @app_commands.command(
         name="commands",
         description="View comprehensive help for all bot commands"
     )
