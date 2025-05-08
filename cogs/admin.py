@@ -6,7 +6,9 @@ import logging
 import asyncio
 import discord
 from discord.ext import commands
-from discord import app_commands
+from utils.discord_compat import get_app_commands_module
+# Use compatibility layer to handle different Discord library versions
+app_commands = get_app_commands_module()
 from typing import Optional
 
 from models.guild import Guild

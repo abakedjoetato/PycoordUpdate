@@ -14,7 +14,9 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union, Tuple
 
 import discord
-from discord import app_commands
+from utils.discord_compat import get_app_commands_module
+# Use compatibility layer to handle different Discord library versions
+app_commands = get_app_commands_module()
 from discord.ext import commands, tasks
 
 from utils.csv_parser import CSVParser
@@ -318,6 +320,7 @@ class CSVProcessorCog(commands.Cog):
             # Create a new SFTP client for this server if none exists
             if server_id not in self.sftp_managers:
                 logger.debug(f"Creating new SFTP manager for server {server_id}")
+                try:
                 # Create SFTPManager with the correct parameter mapping
                 # Get original_server_id if it exists, otherwise use server_id
                 original_server_id = config.get("original_server_id")
@@ -881,11 +884,8 @@ class CSVProcessorCog(commands.Cog):
                             except Exception as e:
                                 logger.error(f"Error processing file {file}: {str(e)}")
 
-                        return files_processed, events_processed
-
-                    finally:
                         # Keep the connection open for the next operation
-                        pass
+                        return files_processed, events_processed
 
             except Exception as e:
                 logger.error(f"SFTP error for server {server_id}: {str(e)}")
