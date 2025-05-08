@@ -168,6 +168,26 @@ def standardize_server_id(server_id: Union[str, int, None]) -> Optional[str]:
         logger.error(f"Error standardizing server_id {server_id}: {str(e)}")
         return None
 
+def safe_standardize_server_id(server_id: Union[str, int, None]) -> str:
+    """Safely standardize server ID, ensuring a string is always returned.
+    
+    Args:
+        server_id: Server ID in any format (string, int, None)
+        
+    Returns:
+        Standardized string server ID, or original input as string if standardization fails
+        Never returns None
+    """
+    # First try standard standardization
+    original_input = str(server_id) if server_id is not None else ""
+    result = standardize_server_id(original_input)
+    
+    # If standardization failed and returned None, use original input
+    if result is None:
+        result = original_input if original_input else ""
+        
+    return result
+
 def validate_server_id_format(server_id: Union[str, int, None]) -> bool:
     """Validate that a server ID has the correct format.
     

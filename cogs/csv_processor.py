@@ -917,15 +917,12 @@ class CSVProcessorCog(commands.Cog):
         Returns:
             Tuple[int, int]: Number of files processed and events processed
         """
-        # Import standardization function
-        from utils.server_utils import standardize_server_id
+        # Import safe standardization function
+        from utils.server_utils import safe_standardize_server_id
 
-        # Standardize server ID
+        # Standardize server ID - always returns a string, never None
         raw_server_id = server_id if server_id is not None else ""
-        # Ensure we pass a string to standardize_server_id
-        standardized_id = standardize_server_id(str(raw_server_id))
-        # Ensure server_id is always a string
-        server_id = standardized_id if standardized_id is not None else str(raw_server_id)
+        server_id = safe_standardize_server_id(raw_server_id)
         logger.info(f"Starting historical parse for server {raw_server_id} (standardized to {server_id}), looking back {days} days")
 
         # Get server config
