@@ -11,14 +11,38 @@ import logging
 import os
 import re
 from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any, Tuple, Protocol, TypeVar, cast, Union, Coroutine
 
 import discord
-# Use app_commands via discord.app_commands for py-cord compatibility
 from discord.ext import commands, tasks
-# Ensure discord_compat is imported for py-cord compatibility
-from utils.discord_compat import get_app_commands_module
-app_commands = get_app_commands_module()
+from discord.commands import Option, SlashCommandGroup
+from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
+
+# Define a protocol for PvPBot to handle database access properly
+T = TypeVar('T')
+class MotorDatabase(Protocol):
+    """Protocol for MongoDB motor database"""
+    @property
+    def servers(self) -> AsyncIOMotorCollection: ...
+    @property
+    def players(self) -> AsyncIOMotorCollection: ...
+    @property
+    def kills(self) -> AsyncIOMotorCollection: ...
+    @property
+    def connections(self) -> AsyncIOMotorCollection: ...
+    @property
+    def game_events(self) -> AsyncIOMotorCollection: ...
+    @property
+    def missions(self) -> AsyncIOMotorCollection: ...
+    @property
+    def guilds(self) -> AsyncIOMotorCollection: ...
+
+class PvPBot(Protocol):
+    """Protocol for PvPBot with database property"""
+    @property
+    def db(self) -> Optional[MotorDatabase]: ...
+    async def wait_until_ready(self) -> None: ...
+    async def add_cog(self, cog: commands.Cog) -> None: ...
 
 from utils.csv_parser import CSVParser
 from utils.sftp import SFTPManager
@@ -47,13 +71,13 @@ class LogProcessorCog(commands.Cog):
         """
         return await server_id_autocomplete(interaction, current)
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot):
         """Initialize the log processor cog
 
         Args:
             bot: Discord bot instance
         """
-        self.bot = bot
+        self.bot = cast(PvPBot, bot)
         self.log_parsers = {} #Added to store LogParser instances by server_id
         # Don't initialize SFTP manager here, we'll create instances as needed
         self.sftp_managers = {}  # Store SFTP managers by server_id
@@ -473,19 +497,27 @@ class LogProcessorCog(commands.Cog):
             logger.error(f"SFTP error for server {server_id}: {str(e)}")
             return 0, 0
 
-    @app_commands.command(name="process_logs")
-    @app_commands.describe(
-        server_id="The server ID to process logs for",
-        minutes="Number of minutes to look back (default: 15)"
+    @discord.commands.slash_command(
+        name="process_logs",
+        description="Manually process game log files"
     )
-    @app_commands.autocomplete(server_id=server_id_autocomplete)
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for log processing
     async def process_logs_command(
         self,
         interaction: discord.Interaction,
-        server_id: Optional[str] = None,
-        minutes: Optional[int] = 15
+        server_id: discord.Option(
+            str,
+            description="The server ID to process logs for",
+            required=False,
+            autocomplete=server_id_autocomplete
+        ) = None,
+        minutes: discord.Option(
+            int,
+            description="Number of minutes to look back",
+            required=False,
+            default=15
+        ) = 15
     ):
         """Manually process game log files
 
@@ -557,7 +589,10 @@ class LogProcessorCog(commands.Cog):
                 from utils.discord_utils import hybrid_send
                 await hybrid_send(interaction, embed=embed, ephemeral=True)
 
-    @app_commands.command(name="log_status")
+    @discord.commands.slash_command(
+        name="log_status",
+        description="Show log processor status"
+    )
     @admin_permission_decorator()
     @premium_tier_required(1)  # Require Survivor tier for log status
     async def log_status_command(self, interaction: discord.Interaction):
@@ -839,12 +874,33 @@ class LogProcessorCog(commands.Cog):
         """
         from models.player import Player
 
-        # Check if player exists
-        player = await Player.get_by_player_id(self.bot.db, player_id)
+        try:
+            # Check if player exists
+            player = await Player.get_by_player_id(self.bot.db, player_id)
 
-        if not player:
-            # Create new player
-            player = Player(
+            if not player:
+                # Create new player
+                player = Player(
+                    player_id=player_id,
+                    server_id=server_id,
+                    name=player_name,
+                    display_name=player_name,
+                    last_seen=datetime.utcnow(),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow()
+                )
+
+                # Insert into database
+                if hasattr(self.bot, 'db') and self.bot.db is not None:
+                    await self.bot.db.players.insert_one(player.__dict__)
+                else:
+                    logger.error("Database not available for player creation")
+
+            return player
+        except Exception as e:
+            logger.error(f"Error in _get_or_create_player: {e}")
+            # Return a basic player object to avoid further errors
+            return Player(
                 player_id=player_id,
                 server_id=server_id,
                 name=player_name,
@@ -854,11 +910,11 @@ class LogProcessorCog(commands.Cog):
                 updated_at=datetime.utcnow()
             )
 
-            # Insert into database
-            await self.bot.db.players.insert_one(player.__dict__)
-
-        return player
-
-async def setup(bot: commands.Bot) -> None:
-    """Set up the log processor cog"""
-    await bot.add_cog(LogProcessorCog(bot))
+async def setup(bot):
+    """Set up the log processor cog
+    
+    Args:
+        bot: The Discord bot instance
+    """
+    # Cast the bot to commands.Bot for proper type checking
+    await bot.add_cog(LogProcessorCog(cast(commands.Bot, bot)))
