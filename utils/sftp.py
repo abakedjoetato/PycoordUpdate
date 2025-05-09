@@ -1858,14 +1858,20 @@ class SFTPClient:
         Returns:
             List[str]: List of found files
         """
-        # Initialize result list if None
-        if result is None:
+        # Initialize result list if None or empty
+        if not isinstance(result, list):
             result = []
-            logger.debug(f"Initialized new result list for {directory}")
+            logger.debug(f"Created new result list for {directory}")
 
-        # Ensure absolute path
+        # Clean and normalize directory path
+        directory = os.path.normpath(directory)
         if not directory.startswith('/'):
             directory = os.path.join("/", directory)
+
+        # Get server directory based on hostname/server_id
+        hostname = self.hostname.split(':')[0] if self.hostname else "server"
+        server_id = self.original_server_id if hasattr(self, 'original_server_id') and self.original_server_id else self.server_id
+        server_dir = f"{hostname}_{server_id}"
         
         # Early validation of directory path
         if '..' in directory or '~' in directory:
@@ -1879,10 +1885,21 @@ class SFTPClient:
         # Normalize path for security
         directory = os.path.normpath(directory)
         
-        # Verify path is under correct server directory
-        server_dir = f"{self.hostname.split(':')[0]}_{self.original_server_id}"
-        if not directory.startswith(f"/{server_dir}"):
-            logger.warning(f"Path {directory} not under server directory /{server_dir}")
+        # Build expected server directory path
+        expected_server_path = os.path.join("/", server_dir)
+        
+        # Allow access to server directory and its subdirectories
+        if not (directory == "/" or directory.startswith(expected_server_path)):
+            logger.debug(f"Path {directory} not under server directory {expected_server_path}, skipping")
+            return result
+
+        # Early validation of directory path
+        if '..' in directory or '~' in directory:
+            logger.warning(f"Rejecting invalid directory path: {directory}")
+            return result
+
+        if current_depth > max_depth:
+            logger.debug(f"Max depth {max_depth} reached at {directory}")
             return result
 
         # Safety check - make sure result is a list
