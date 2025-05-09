@@ -60,7 +60,7 @@ logger = logging.getLogger(__name__)
 class LogProcessorCog(commands.Cog):
     """Commands and background tasks for processing game log files"""
 
-    async def server_id_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice(name=str]]:
+    async def server_id_autocomplete(self, interaction: discord.Interaction, current: str) -> List[app_commands.Choice[str]]:
         """Autocomplete for server selection by name, returns server_id as value
 
         Args:
