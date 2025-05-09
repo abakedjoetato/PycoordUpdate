@@ -16,7 +16,10 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog
 from discord import app_commands
-from discord.app_commands import Choice, AppCommandOptionType
+from discord.app_commands import Choice
+
+# For compatibility, use discord's enums instead of AppCommandOptionType
+from discord import AppCommandOptionType
 
 # Import additional helper functions from discord_compat
 from utils.discord_compat import command, describe, autocomplete, guild_only
@@ -296,12 +299,12 @@ async def initialize_bot(force_sync=False):
             if f.endswith('.py') and not f.startswith('_'):
                 cog_files.append(f)
         
-        # Now load each cog (load_extension is not awaitable in py-cord)
+        # Now load each cog (load_extension is awaitable in discord.py 2.5.2)
         for filename in cog_files:
             cog_name = filename[:-3]
             try:
-                # Load extension is synchronous in py-cord
-                bot.load_extension(f"{cog_dir}.{cog_name}")
+                # In discord.py 2.5.2, load_extension is a coroutine
+                await bot.load_extension(f"{cog_dir}.{cog_name}")
                 logger.info(f"Loaded cog: {cog_name}")
                 cog_count += 1
             except Exception as e:

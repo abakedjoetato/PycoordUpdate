@@ -18,7 +18,8 @@ import discord
 from discord.ext import commands
 from discord.ext.commands import Bot, Cog
 from discord import app_commands
-from discord.app_commands import Choice, AppCommandOptionType
+from discord.app_commands import Choice
+from discord import AppCommandOptionType  # Import from main discord module
 
 # Log discord version
 logger.info(f"Using discord library version: {discord.__version__}")

@@ -1,3 +1,4 @@
 #!/bin/bash
-# Launch the Discord bot
-python run_discord_on_replit.py
+# Run the Discord bot
+export PYTHONPATH="$PWD"
+python bot.py
