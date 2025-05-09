@@ -11,3 +11,15 @@ run = ["gunicorn", "--bind", "0.0.0.0:5000", "main:app"]
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[workflows]
+runButton = "Discord Bot"
+
+[[workflows.workflow]]
+name = "Discord Bot"
+author = 42389034
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python run_discord_on_replit.py"
