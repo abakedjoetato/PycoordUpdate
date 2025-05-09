@@ -1850,7 +1850,7 @@ class SFTPClient:
         Args:
             directory: Directory to search (must be under server root)
             pattern_re: Compiled regular expression pattern
-            result: List to add results to
+            result: List to add results to 
             recursive: Whether to search recursively
             max_depth: Maximum recursion depth
             current_depth: Current recursion depth
@@ -1858,10 +1858,9 @@ class SFTPClient:
         Returns:
             List[str]: List of found files
         """
-        # Initialize result list if None or empty
-        if not isinstance(result, list):
+        # Always ensure a valid result list
+        if result is None:
             result = []
-            logger.debug(f"Created new result list for {directory}")
 
         # Clean and normalize directory path
         directory = os.path.normpath(directory)
