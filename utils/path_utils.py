@@ -58,10 +58,23 @@ def get_csv_path(hostname: str, server_id: str, world_dir: Optional[str] = None,
     Returns:
         Path to CSV files directory
     """
-    # Always use actual1/deathlogs path structure for CSV files
-    base_path = os.path.join(get_base_path(hostname, server_id, original_server_id), "actual1", "deathlogs")
+    # Clean hostname and use original_server_id for consistency
+    clean_host = clean_hostname(hostname)
+    path_server_id = original_server_id if original_server_id else server_id
+    logger.debug(f"Building CSV path with host '{clean_host}' and ID '{path_server_id}'")
+    
+    # Always start from root with hostname_serverid structure
+    server_dir = f"{clean_host}_{path_server_id}"
+    # Enforce absolute path from root with actual1/deathlogs structure
+    base_path = os.path.join("/", server_dir, "actual1", "deathlogs")
+    
+    # Add world directory if specified
     if world_dir:
-        return os.path.join(base_path, world_dir)
+        final_path = os.path.join(base_path, world_dir)
+        logger.debug(f"CSV path with world dir: {final_path}")
+        return final_path
+    
+    logger.debug(f"CSV base path: {base_path}")
     return base_path
 
 def get_log_file_path(hostname: str, server_id: str, original_server_id: Optional[str] = None) -> str:

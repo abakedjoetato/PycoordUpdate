@@ -1844,7 +1844,7 @@ class SFTPClient:
             logger.error(f"Failed to get log file: {e}")
             return None
 
-    async def _find_files_recursive(self, directory: str, pattern_re: re.Pattern, result: List[str], recursive: bool, max_depth: int, current_depth: int):
+    async def _find_files_recursive(self, directory: str, pattern_re: re.Pattern, result: List[str], recursive: bool, max_depth: int, current_depth: int) -> List[str]:
         """Recursively find files by pattern with strict downward-only traversal
 
         Args:
@@ -1854,23 +1854,36 @@ class SFTPClient:
             recursive: Whether to search recursively
             max_depth: Maximum recursion depth
             current_depth: Current recursion depth
+            
+        Returns:
+            List[str]: List of found files
         """
+        # Initialize result list if None
+        if result is None:
+            result = []
+            logger.debug(f"Initialized new result list for {directory}")
+
+        # Ensure absolute path
+        if not directory.startswith('/'):
+            directory = os.path.join("/", directory)
+        
         # Early validation of directory path
         if '..' in directory or '~' in directory:
             logger.warning(f"Rejecting invalid directory path: {directory}")
-            return
+            return result
 
         if current_depth > max_depth:
             logger.debug(f"Max depth {max_depth} reached, stopping at directory: {directory}")
-            return
+            return result
 
         # Normalize path for security
         directory = os.path.normpath(directory)
-
-        # Verify we're still under the server root
-        if not directory.startswith('/'):
-            logger.warning(f"Rejecting relative path: {directory}")
-            return
+        
+        # Verify path is under correct server directory
+        server_dir = f"{self.hostname.split(':')[0]}_{self.original_server_id}"
+        if not directory.startswith(f"/{server_dir}"):
+            logger.warning(f"Path {directory} not under server directory /{server_dir}")
+            return result
 
         # Safety check - make sure result is a list
         if not result:
