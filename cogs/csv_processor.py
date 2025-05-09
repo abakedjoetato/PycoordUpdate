@@ -443,15 +443,18 @@ class CSVProcessorCog(commands.Cog):
                 csv_files = []
                 path_found = None
 
-                # Build CSV file paths
-                if sftp_path and sftp_path.startswith("/"):
-                    # Use configured absolute path
-                    deathlogs_path = sftp_path
-                    logger.debug(f"Using configured absolute path: {deathlogs_path}")
-                else:
-                    # Use default path structure
-                    deathlogs_path = os.path.join("/", server_dir, "actual1", "deathlogs")
-                    logger.debug(f"Using default path structure: {deathlogs_path}")
+                # Build server directory and base path
+                server_dir = f"{config.get('hostname', 'server').split(':')[0]}_{path_server_id}"
+                base_path = os.path.join("/", server_dir)
+                
+                # Always use the standardized path for deathlogs
+                deathlogs_path = os.path.join(base_path, "actual1", "deathlogs")
+                logger.debug(f"Using standardized deathlogs path: {deathlogs_path}")
+                
+                # Never allow paths that would search above the base server directory
+                if ".." in deathlogs_path:
+                    logger.warning(f"Invalid deathlogs path containing parent traversal: {deathlogs_path}")
+                    return 0, 0
 
                 # Define standard paths to check
                 standard_paths = [

@@ -255,11 +255,16 @@ class LogProcessorCog(commands.Cog):
 
             try:
                 # Get the configured SFTP path from server settings
-                sftp_path = config.get("sftp_path", "")
+                sftp_path = config.get("sftp_path", "/Logs")
 
                 # Always try to get original_server_id first for path construction
                 path_server_id = config.get("original_server_id")
                 logger.info(f"Initial path_server_id from config: {path_server_id}")
+
+                # Build server directory name using hostname_id format
+                server_dir = f"{config.get('hostname', 'server').split(':')[0]}_{path_server_id}"
+                # Base path is always /hostname_serverid/
+                base_path = os.path.join("/", server_dir)
                 
                 # Attempt multiple methods to get numeric ID
                 if not path_server_id:
