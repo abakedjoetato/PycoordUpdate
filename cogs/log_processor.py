@@ -184,7 +184,7 @@ class LogProcessorCog(commands.Cog):
                     "username": server.get("sftp_username", ""),
                     "password": server.get("sftp_password", ""),
                     # Keep additional parameters with original names
-                    "sftp_path": server.get("sftp_logs_path", ""),  # Empty string will use default path construction
+                    "sftp_path": server.get("sftp_path", ""),  # Empty string will use default path construction
                     "log_pattern": r"Deadside\.log"
                 }
         except Exception as e:
