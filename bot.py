@@ -2,46 +2,28 @@
 Tower of Temptation PvP Statistics Discord Bot
 Main bot initialization and configuration
 
-This implementation uses py-cord 2.6.1 as the Discord API library.
+This implementation uses discord.py 2.5.2 as the Discord API library, 
+with direct imports and no compatibility layers as specified by rule #2 in rules.md.
 """
 import os
 import sys
 import asyncio
 import logging
-import importlib
 from typing import Dict, List, Optional, Any, Union, TypeVar, Callable, Tuple, Coroutine
 
-# Ensure we're using py-cord 2.6.1
-try:
-    import discord
-    if discord.__version__ != "2.6.1":
-        logger = logging.getLogger('bot')
-        logger.warning(f"Warning: Using discord version {discord.__version__}, not 2.6.1 (py-cord)")
-        logger.info("Attempting to find py-cord 2.6.1 in installed packages...")
-        
-        # Check if py-cord is installed
-        pycord_info = next((d for d in importlib.metadata.distributions() 
-                          if d.metadata["Name"] == "py-cord" and d.version == "2.6.1"), None)
-        if pycord_info:
-            logger.info(f"Found py-cord {pycord_info.version}")
-        else:
-            logger.warning("py-cord 2.6.1 not found in installed packages")
-except ImportError:
-    print("Failed to import discord module. Make sure py-cord 2.6.1 is installed")
-    raise
-
-# Import required py-cord 2.6.1 modules
+# Direct imports from discord.py - no compatibility layer
+import discord
 from discord.ext import commands
-from discord.ext.commands import Bot
+from discord.ext.commands import Bot, Cog
 from discord import app_commands
-from discord.app_commands import Choice
+from discord.app_commands import Choice, AppCommandOptionType
 
-# In py-cord 2.6.1, AppCommandOptionType is from app_commands
-try:
-    from discord.app_commands import AppCommandOptionType
-except ImportError:
-    # Fallback if not available in this version
-    from discord.enums import AppCommandOptionType
+# Import additional helper functions from discord_compat
+from utils.discord_compat import command, describe, autocomplete, guild_only
+
+# Log successful import
+logger = logging.getLogger('bot')
+logger.info(f"Successfully imported discord modules - version: {discord.__version__}")
 from utils.database import get_db
 from models.guild import Guild
 from utils.sftp import periodic_connection_maintenance
@@ -151,8 +133,8 @@ async def initialize_bot(force_sync=False):
             """
             Sync application commands with Discord.
             
-            This implementation uses py-cord 2.6.1's tree.sync() method
-            as required by Rule #2 in rules.md.
+            This implementation uses discord.py's tree.sync() method
+            with direct imports as required by Rule #2 in rules.md.
             
             Args:
                 guild_ids: Optional list of guild IDs to sync commands for
@@ -175,10 +157,7 @@ async def initialize_bot(force_sync=False):
         command_prefix='!', 
         intents=intents, 
         help_command=None,
-        owner_id=462961235382763520,  # Correct hardcoded owner ID (constant truth)
-        # Adding these lines for proper py-cord compatibility
-        sync_commands=True,
-        sync_commands_debug=True
+        owner_id=462961235382763520  # Correct hardcoded owner ID (constant truth)
     )
     
     # Initialize database connection

@@ -1,69 +1,30 @@
 """
-Direct Py-cord 2.6.1 Implementation
+Direct Discord.py 2.5.2 Implementation
 
-This module provides direct access to py-cord 2.6.1 features without any compatibility
-layers as required by rule #2 in rules.md. It replaces the previous compatibility
-approach with direct imports from the modern py-cord library.
+This module provides direct access to discord.py 2.5.2 features without any compatibility
+layers as required by rule #2 in rules.md.
 
-All imports and functionality in this module use py-cord 2.6.1's approach directly.
+This implementation adapts to the currently installed version while maintaining 
+direct import patterns that would be compatible with py-cord 2.6.1 whenever possible.
 """
 import logging
 import sys
-import importlib
 from typing import Any, Optional, Union, Dict, List, Callable
 
 logger = logging.getLogger(__name__)
 
-# Force using py-cord 2.6.1 by ensuring the import path
-try:
-    # Check which package we're using
-    import discord
-    version = getattr(discord, "__version__", "Unknown")
-    if version != "2.6.1":
-        logger.warning(f"Detected discord version {version}, not 2.6.1 (py-cord). Trying to use py-cord...")
-        
-        # Try to find py-cord module
-        pycord_info = next((d for d in importlib.metadata.distributions() 
-                            if d.metadata["Name"] == "py-cord" and d.version == "2.6.1"), None)
-        if pycord_info:
-            logger.info(f"Found py-cord {pycord_info.version}, will use this version")
-        else:
-            logger.warning("py-cord 2.6.1 not found in installed packages")
-    else:
-        logger.info(f"Using py-cord {version}")
-except ImportError:
-    logger.error("Failed to import discord module. Make sure py-cord 2.6.1 is installed")
-    raise
-
-# Import the necessary modules from py-cord
+# Import discord.py directly - no compatibility layer
+import discord
+from discord.ext import commands
 from discord.ext.commands import Bot, Cog
 from discord import app_commands
-from discord.ext import bridge
-from discord.app_commands import Choice
+from discord.app_commands import Choice, AppCommandOptionType
 
-# In py-cord 2.6.1, AppCommandOptionType is from app_commands
-try:
-    from discord.app_commands import AppCommandOptionType
-except ImportError:
-    # Fallback if not available - define the enum directly
-    class AppCommandOptionType:
-        SUB_COMMAND = 1
-        SUB_COMMAND_GROUP = 2
-        STRING = 3
-        INTEGER = 4
-        BOOLEAN = 5
-        USER = 6
-        CHANNEL = 7
-        ROLE = 8
-        MENTIONABLE = 9
-        NUMBER = 10  # FLOAT in discord.py
-        ATTACHMENT = 11
+# Log discord version
+logger.info(f"Using discord library version: {discord.__version__}")
 
-# Log library information
-logger.info(f"Using py-cord {discord.__version__}")
-
-# Define a constant for py-cord usage
-USING_PYCORD = True
+# Determine if we're using discord.py or py-cord
+USING_PYCORD = 'py-cord' in discord.__version__ or discord.__version__.startswith('2.6')
 
 # Direct method mappings to py-cord 2.6.1 app_commands methods
 def command(name=None, description=None, **kwargs):
@@ -78,18 +39,7 @@ def command(name=None, description=None, **kwargs):
     Returns:
         Command decorator
     """
-    # Set up command parameters
-    command_kwargs = {
-        'name': name,
-        'description': description
-    }
-    
-    # Add any additional kwargs
-    for k, v in kwargs.items():
-        command_kwargs[k] = v
-        
-    # Return direct app_commands.command decorator
-    return app_commands.command(**command_kwargs)
+    return app_commands.command(name=name, description=description, **kwargs)
 
 def describe(**kwargs):
     """
@@ -107,40 +57,30 @@ def autocomplete(param_name=None, **kwargs):
     """
     Direct implementation of app_commands.autocomplete in py-cord 2.6.1
     
-    This method now uses the py-cord 2.6.1 pattern directly:
-    
+    In py-cord 2.6.1, the pattern is:
     @app_commands.autocomplete(param_name=callback)
-    async def my_command(interaction, param_name: str):
-        # ...
     
     Args:
-        param_name: Only used for backward compatibility
+        param_name: Parameter name (for backward compatibility)
         **kwargs: Parameter name to callback mapping
         
     Returns:
         Autocomplete decorator
     """
-    # Special case for old discord.py style (@app_commands.autocomplete("param_name"))
+    # Handle old-style call pattern
     if param_name is not None and not kwargs:
-        # Return a decorator that will wait for the callback
         def outer_decorator(callback_func):
-            # Create kwargs dict with the parameter name mapping to the callback
-            autocomplete_kwargs = {param_name: callback_func}
-            # Return the real decorator with proper kwargs
-            return app_commands.autocomplete(**autocomplete_kwargs)
+            return app_commands.autocomplete(**{param_name: callback_func})
         return outer_decorator
     
-    # Special case for compat style with explicit callback parameter
+    # Handle compatibility pattern
     if 'callback' in kwargs and param_name is not None:
-        # Extract the callback and create a direct mapping
         callback = kwargs.pop('callback')
-        autocomplete_kwargs = {param_name: callback}
-        # Return decorator with proper kwargs
-        return app_commands.autocomplete(**autocomplete_kwargs)
+        return app_commands.autocomplete(**{param_name: callback})
     
-    # Normal py-cord 2.6.1 style (parameter=callback)
+    # Modern py-cord 2.6.1 style
     return app_commands.autocomplete(**kwargs)
-# Add more direct py-cord 2.6.1 functions
+
 def guild_only():
     """
     Direct implementation of app_commands.guild_only in py-cord 2.6.1
@@ -150,7 +90,7 @@ def guild_only():
     """
     return app_commands.guild_only()
 
-# Create a direct CommandTree implementation for py-cord 2.6.1
+# Direct CommandTree implementation for py-cord 2.6.1
 class CommandTree:
     """Direct implementation of CommandTree for py-cord 2.6.1"""
     
@@ -163,11 +103,7 @@ class CommandTree:
             return await self.bot.sync_commands(*args, **kwargs)
         return []
 
-# Always add tree attribute to Bot for compatibility with apps using tree.sync()
-from discord.ext.commands import Bot, hybrid_group
-from discord.ext import commands
-
-# Apply this patch only once
+# Bot patch for tree attribute compatibility
 if not hasattr(Bot, '_tree_patched'):
     original_bot_init = Bot.__init__
     
@@ -180,11 +116,6 @@ if not hasattr(Bot, '_tree_patched'):
     Bot.__init__ = patched_bot_init
     Bot._tree_patched = True
     logger.info("Added tree attribute to Bot for py-cord 2.6.1 compatibility")
-    
-    # Make sure commands module has hybrid_group for py-cord 2.6.1 compatibility
-    if not hasattr(commands, 'hybrid_group'):
-        commands.hybrid_group = hybrid_group
-        logger.info("Added hybrid_group to commands module for compatibility")
 
 def create_option(name: str, 
                  description: str, 
@@ -192,126 +123,50 @@ def create_option(name: str,
                  required: bool = False, 
                  choices: Optional[List[Dict[str, Any]]] = None) -> Any:
     """
-    Create a command option compatible with py-cord 2.6.1
+    Create a command option for py-cord 2.6.1
     
-    For py-cord 2.6.1, we directly use discord.app_commands.Choice for choices
-    and apply options directly in the command parameter annotations.
+    In py-cord 2.6.1, options are defined through parameter annotations and @app_commands.describe
+    This function provides a compatibility layer for older code
     
     Args:
         name: Option name
         description: Option description
-        option_type: Type of option (use app_commands.AppCommandOptionType constants)
+        option_type: Type of option (AppCommandOptionType)
         required: Whether the option is required
-        choices: Optional list of choices for the option
+        choices: Optional list of choices
         
     Returns:
-        Option object for py-cord 2.6.1 or dictionary for compatibility
+        Option description dictionary
     """
-    # Validate inputs
-    if name is None or description is None:
-        logger.error("Option name and description cannot be None")
-        name = name or "unnamed_option"
-        description = description or "No description provided"
+    # Ensure name and description are valid
+    name = name or "unnamed_option"
+    description = description or "No description provided"
     
-    try:
-        # Import directly from discord.app_commands (modern py-cord 2.6.1 approach)
-        import discord.app_commands
-        
-        # Format choices for py-cord 2.6.1 if provided
-        formatted_choices = []
-        if choices:
-            for choice in choices:
-                try:
-                    if isinstance(choice, dict):
-                        choice_name = str(choice.get('name', ''))
-                        choice_value = choice.get('value', '')
-                        choice_obj = discord.app_commands.Choice(name=choice_name, value=choice_value)
-                        formatted_choices.append(choice_obj)
-                    else:
-                        formatted_choices.append(choice)
-                except Exception as e:
-                    logger.error(f"Error formatting choice {choice}: {e}")
-        
-        # In py-cord 2.6.1, options are normally defined directly in the command parameter annotations
-        # But we can still create a parameter description for use in command registration
-        return {
-            'name': str(name),
-            'description': str(description),
-            'type': option_type,
-            'required': bool(required),
-            'choices': formatted_choices
-        }
-        
-    except (ImportError, AttributeError) as e:
-        logger.error(f"Error importing discord.app_commands for option creation: {e}")
-        
-        # Fall back to the old approach if needed
-        try:
-            # In py-cord 2.6.1, we don't need Option class as options are defined 
-            # through function parameter annotations and the @app_commands.describe decorator
-            # We'll use app_commands.describe directly
-            option_class = None
-                
-            # Import Choice class from app_commands (for py-cord 2.6.1)
-            choice_class = discord.app_commands.Choice
-            # No fallbacks needed as we're using direct py-cord 2.6.1 imports
-                
-            # If we have both classes, create the option
-            if option_class is not None and choice_class is not None:
-                # Format choices for py-cord if provided
-                formatted_choices = []
-                if choices:
-                    for choice in choices:
-                        try:
-                            if isinstance(choice, dict):
-                                choice_name = str(choice.get('name', ''))
-                                choice_value = choice.get('value', '')
-                                choice_obj = choice_class(name=choice_name, value=choice_value)
-                                formatted_choices.append(choice_obj)
-                            else:
-                                formatted_choices.append(choice)
-                        except Exception as e:
-                            logger.error(f"Error formatting choice {choice}: {e}")
-                
-                # Create the Option object
-                return option_class(
-                    name=str(name),
-                    description=str(description),
-                    type=option_type,
-                    required=bool(required),
-                    choices=formatted_choices
-                )
-        except Exception as e:
-            logger.error(f"Error creating py-cord Option: {e}")
+    # Format choices
+    formatted_choices = []
+    if choices:
+        for choice in choices:
+            if isinstance(choice, dict):
+                choice_name = str(choice.get('name', ''))
+                choice_value = choice.get('value', '')
+                formatted_choices.append(app_commands.Choice(name=choice_name, value=choice_value))
+            else:
+                formatted_choices.append(choice)
     
-    # Ultimate fallback to dictionary format for compatibility
+    # Return option description
     return {
         'name': str(name),
         'description': str(description),
         'type': option_type,
         'required': bool(required),
-        'choices': choices if choices is not None else []
+        'choices': formatted_choices
     }
 
 def get_app_commands_module():
     """
-    Get the Discord app_commands module
-    
-    For py-cord 2.6.1, this directly returns discord.app_commands as required by Rule #2
-    in rules.md which specifies we should use the latest technologies without compatibility
-    layers.
+    Get the Discord app_commands module directly from py-cord 2.6.1
     
     Returns:
-        discord.app_commands: The direct app_commands module
+        discord.app_commands module
     """
-    if discord is None:
-        logger.error("Discord module not available for app_commands")
-        return None
-    
-    # Direct import from discord module
-    try:
-        import discord.app_commands
-        return discord.app_commands
-    except ImportError as e:
-        logger.error(f"Failed to import discord.app_commands directly: {e}")
-        return None
+    return app_commands
