@@ -1858,8 +1858,8 @@ class SFTPClient:
         Returns:
             List[str]: List of found files
         """
-        # Always ensure a valid result list
-        if result is None:
+        # Initialize result list if not provided
+        if not isinstance(result, list):
             result = []
 
         # Clean and normalize directory path
